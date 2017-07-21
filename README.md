@@ -1,2 +1,5 @@
 # LPDE
-Legendre Polynomial Density Estimation
+**Legendre Polynomial Density Estimation**
+
+*Under construction ...*
+

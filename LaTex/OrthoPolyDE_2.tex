@@ -1,0 +1,253 @@
+\documentclass[]{report}
+\usepackage{amsmath, amsfonts, bm, bbm, upgreek}
+
+\title{Density Estimation with Orthogonal Polynomials}
+\author{Georg Heimel}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+	This is the abstract.
+\end{abstract}
+
+\chapter{Orthogonal Polynomials}
+	\section{The univariate case}
+	We take \emph{orthogonal} polynomials $\phi_i(x)$ of a single, continuous variable to exhibit the following properties.
+	\begin{enumerate}
+		\item Their index $i=0\ldots\infty$ stands for the highest power of $x$ occurring in the polynomial, also called its \emph{degree}.
+		\item The polynomials are orthogonal on some interval $(a, b)$ with respect to some measure $w(x)$ in the sense that:
+		\begin{equation}\label{orthogonality}
+			\int\limits_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \delta_{ij}
+		\end{equation}
+		\item As such they form a complete basis of all square-integrable $L^2(\mathbb{R})$ functions on the interval $(a, b)$, that is, if $f(x)$ be such a function, then
+		\begin{equation}\label{series}
+			f(x)=\sum_{j=0}^{\infty}c_j\,\phi_j(x)w(x)
+		\end{equation}
+		with constant coefficients $c_j$, which are determined by multiplying eq. \ref{series} from the left with $\phi_i(x)$ and integrating over all $x$.
+		\begin{equation*}
+			\int\limits_a^b\mathrm{d}x\,\phi_i(x)f(x) = \sum_{j=0}^{\infty}c_j\int\limits_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x)
+		\end{equation*}
+		Using eq. \ref{orthogonality} on the right-hand side, we then find:
+		\begin{equation}
+			c_i=\int\limits_a^b\mathrm{d}x\,\phi_i(x)f(x)
+		\end{equation}
+		\item We can approximate $f(x)$ by a \emph{truncated} series
+		\begin{equation}\label{trunc_series}
+			f(x)\approx\sum_{j=0}^{J}c_j\,\phi_j(x)w(x)
+		\end{equation}
+		with $J < \infty$ and we can make this approximation systematically better by increasing $J$.
+	\end{enumerate}
+	
+	\section{The bivariate case}
+	Orthogonal polynomials $\mathit{\Phi}_{ij}(x, y)$ of \emph{two} continuous variables, $x$ and $y$, are simple the tensor product $\phi_i(x)\otimes\phi_j(y)$. As such, they inherit the properties of their univariate components.
+	\begin{enumerate}
+		\item Their indices, $i,j = 0\ldots\infty$ stand for the highest powers of $x$ and $y$ occurring in the respective polynomials.
+		\item They are orthogonal on some interval $(a,b)\times(a,b)$ with respect to some measure $W(x, y)=w(x)\otimes w(y)$ in the sense that
+		\begin{equation}
+			\iint_a^b\mathrm{d}x\mathrm{d}y\,\phi_i(x)\phi_k(x)\phi_j(y)\phi_\ell(y)w(x)w(y) = \delta_{ik}\delta_{j\ell}
+		\end{equation}
+		\item As such, they form a complete basis of all square-integrable $L^2(\mathbb{R}^2)$ functions on the interval $(a,b)\times(a,b)$, that is, if $f(x, y)$ be such a function, then
+		\begin{equation}
+			f(x, y)=\sum_{k,\ell=0}^{\infty}C_{k\ell}\,\phi_k(x)\phi_\ell(x)w(x)w(y)
+		\end{equation}
+		with constant coefficients $C_{k\ell}$, which are determined by multiplying from the left with $\phi_i(x)\phi_j(y)$ and integrating over all $x$ and $y$.
+		\begin{equation*}
+			\iint_a^b\mathrm{d}x\mathrm{d}y\,\phi_i(x)\phi_j(y)f(x, y) = \sum_{k,\ell=0}^{\infty}C_{k\ell}\iint_a^b\mathrm{d}x\mathrm{d}y\,\phi_i(x)\phi_k(x)\phi_j(y)\phi_\ell(y)w(x)w(y)
+		\end{equation*}
+		Orthogonality then implies:
+		\begin{equation}
+			C_{ij} = \iint_a^b\mathrm{d}x\mathrm{d}y\,\phi_i(x)\phi_j(y)f(x,y)
+		\end{equation}
+		\item We can approximate $f(x, y)$ to any desired accuracy by the truncated series
+		\begin{equation}
+			f(x)\approx\sum_{k, \ell=0}^{K, L}C_{k\ell}\,\phi_k(x)\phi_\ell(y)w(x)w(y)
+		\end{equation}
+		with $K, L < \infty$ and we can make this approximation systematically better by increasing $K$ and $L$.
+	\end{enumerate}
+	
+
+\chapter{Expansion of a Probability Density}
+	\section{The univariate case}
+	If, in particular, we wish to expand a univariate probability density function $p(x)$ with a support of $(a,b)$ into a truncated series of the type shown in eq. \ref{trunc_series}, care has to be taken that key properties of $p(x)$ are conserved.
+	\begin{align}
+		p(x) & \ge 0 \label{nonnegativity}\\
+		\int\limits_a^b\mathrm{d}x\,p(x) & = 1 \label{int_to_unity}
+	\end{align}	
+	One way to satisfy constraint \ref{nonnegativity} is to not directly expand $p(x)$ but, rather, its square root.
+	\begin{equation}\label{sqrt_series}
+		\sqrt{p(x)} = \sum_{j=0}^{J}c_j\,\phi_j(x)\sqrt{w(x)}
+	\end{equation}
+	The probability density is then recovered through $p(x)=\left(\sqrt{p(x)}\right)^2$. Substituting expansion \ref{sqrt_series} into constraint \ref{int_to_unity} and using eq. \ref{orthogonality} then yields the following requirement for the expansion coefficients.
+	\begin{equation}\label{coeff_sqr_norm}
+		\sum_{i, j=0}^{J}c_ic_j\int\limits_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \sum_{j=0}^{J}c_j^2 = 1
+	\end{equation}
+	
+		\subsection{Density gradient}
+		For the sake of completeness, we note here that the gradient of the density \ref{sqrt_series} is given by:
+		\begin{equation}
+			\frac{\partial}{\partial x}p(x) = 2\left[\sum_{j=0}^Jc_j\phi_j(x)\right]\left[\sum_{j=0}^Jc_j\frac{\partial\phi_j(x)}{\partial x}\right]
+		\end{equation}
+	
+	\section{The bivariate case}
+	Equivalently, in two dimensions, we have to demand of the probability density $p(x,y)$ with support $(a,b)\times(a,b)$that:
+	\begin{align}
+		p(x, y) & \ge 0 \\
+		\iint_a^b\mathrm{d}x\mathrm{d}y\,p(x,y) & = 1 
+	\end{align}
+	Again, the former can be satisfied by expanding the square root of $p(x,y)$.
+	\begin{equation}
+		\sqrt{p(x,y)} = \sum_{k, \ell=0}^{K, L}C_{k\ell}\,\phi_k(x)\phi_\ell(y)\sqrt{w(x)}\sqrt{w(y)}
+	\end{equation}
+	With this expansion, the second demand then translates into a requirement for the expansion coefficients.
+	\begin{equation}
+		\sum_{i, j=0}^{K, L}\sum_{k, \ell=0}^{K, L}C_{ij}C_{k\ell} \iint_a^b\mathrm{d}x\mathrm{d}y\,\phi_i(x)\phi_k(x)\phi_j(y)\phi_\ell(y)w(x)w(y) = \sum_{k, \ell=0}^{K, L}C_{k\ell}^2 = 1
+	\end{equation}
+	
+		\subsection{Density gradient}
+		For the sake of completeness, we give the gradient of the bivariate density is as well.
+		\begin{align}
+			\frac{\partial}{\partial x}p(x, y) & = 2\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\phi_\ell(y)\right]\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\frac{\partial\phi_k(x)}{\partial x}\phi_\ell(y)\right] \\
+			\frac{\partial}{\partial y}p(x, y) & = 2\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\phi_\ell(y)\right]\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\frac{\partial\phi_\ell(y)}{\partial y}\right] \nonumber
+		\end{align}
+
+\chapter{Constrained Maximum Likelihood Estimate of the Expansion Coefficients}
+	\section{The univariate case}
+	Say we have observed $N$ data points $x_{n=0\ldots N-1}$, collectively denoted by the vector $\mathbf{x}=\left\{x_n\right\}$ and we wish to find an approximation $\hat{p}(x)$ to the underlying probability distribution from which the data points were drawn.
+	
+	One possibility is to employ the series expansion \ref{sqrt_series} and to determine its coefficients $\mathbf{c}=\left\{c_j\right\}$ by maximizing their likelihood $p(\mathbf{x}\vert\mathbf{c})$ or, rather, by \emph{minimizing} their negative log-likelihood, $-\log p(\mathbf{x}\vert\mathbf{c})$, under the constraint \ref{coeff_sqr_norm}. Assuming the data points to be independent and identically distributed, the former is given by
+	\begin{align}\label{log_likelihood}
+		-\log p(\mathbf{x}\vert\mathbf{c}) & = -\log\prod_{n=0}^{N-1}p(x_n) = -\log\prod_{n=0}^{N-1}\left(\sqrt{p(x_n)}\right)^2 \nonumber \\
+		& = -\sum_{n=0}^{N-1}\log\left(\sum_{j=0}^{J}c_j\,\phi_j(x_n)\sqrt{w(x_n)}\right)^2
+	\end{align}
+	and the latter, expressed in terms of a function,
+	\begin{equation}\label{constraint}
+		q(\mathbf{c}) = \sum_{j=0}^{J}c_j^2 - 1 = 0
+	\end{equation}
+	can be incorporated through a \emph{Lagrange} parameter $\lambda$ to yield and overall objective function (or Lagrangian $\mathcal{L}$) that needs to be minimized.
+	\begin{equation}\label{lagrangian}
+		\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = -\log p(\mathbf{x}\vert\mathbf{c}) + \lambda q(\mathbf{c})
+	\end{equation}
+	Before we do that, however, it is worthwhile to inspect the properties of a particular quantity.
+	
+		\subsection{The Fisher information matrix}
+		The elements $\mathcal{F}_{uv}$ of the \emph{Fisher information matrix} $\bm{\mathcal{F}}$ for a probability distribution $p(x\vert\mathbf{c})$ with support $(a,b)$, parameterized by parameters $\mathbf{c}$, can be defined as:
+		\begin{equation}
+			\mathcal{F}_{uv} = \int\limits_a^b\mathrm{d}x\,p(x\vert\mathbf{c})\frac{\partial}{\partial c_u}\log p(x\vert\mathbf{c})\,\frac{\partial}{\partial c_v}\log p(x\vert\mathbf{c})
+		\end{equation}
+		Using our $p(x\vert\mathbf{c})=\left(\sqrt{p(x\vert\mathbf{c})}\right)^2$ yields
+		\begin{align*}
+			\mathcal{F}_{uv} & =  	\int\limits_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2\frac{\partial}{\partial c_u}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)^2\,\frac{\partial}{\partial c_v}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)^2 \\
+			& =  4\int\limits_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2 \frac{\partial}{\partial c_u}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)\,\frac{\partial}{\partial c_v}\log \left(\sqrt{p(x\vert\mathbf{c})}\right) \\
+			& =  4 \int\limits_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2\frac{\frac{\partial}{\partial c_u}\sqrt{p(x\vert\mathbf{c})}}{\sqrt{p(x\vert\mathbf{c})}}\frac{\frac{\partial}{\partial c_v}\sqrt{p(x\vert\mathbf{c})}}{\sqrt{p(x\vert\mathbf{c})}} \\
+			& =  4\int\limits_a^b\mathrm{d}x\,\frac{\partial}{\partial c_u}\sqrt{p(x\vert\mathbf{c})}\,\frac{\partial}{\partial c_v}\sqrt{p(x\vert\mathbf{c})}
+		\end{align*}
+		and, by substituting expansion \ref{sqrt_series} with derivative
+		\begin{equation}\label{gradient_sqrtp}
+			\frac{\partial}{\partial c_u}\sum_{j=0}^{J}c_j\,\phi_j(x)\sqrt{w(x)} = \phi_u(x)\sqrt{w(x)}
+		\end{equation}
+		and using eq. \ref{orthogonality}, we arrive at
+		\begin{equation*}
+			\mathcal{F}_{uv} = 4\int\limits_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) = 4\delta_{uv}
+		\end{equation*}
+		or, expressed in matrix notation,
+		\begin{equation}\label{fisher_direct}
+			\bm{\mathcal{F}} = 4\mathbbm{1}
+		\end{equation}
+		with $\mathbbm{1}$ the unit matrix.
+		
+		An alternative but equivalent definition of the Fisher information matrix is \textit{via} the expectation value $\mathbb{E}$ of the Hessian $\bm{\mathcal{H}}$ of the negative log-likelihood,
+		\begin{equation}\label{fisher_hessian}
+			\bm{\mathcal{F}} = \mathbb{E}\left[\bm{\mathcal{H}}\right] = -\mathbb{E}\left[\nabla\nabla^\mathrm{T}\log p(x\vert\mathbf{c})\right]
+		\end{equation}
+		where $\nabla$ denotes the gradient operator with respect to the parameters $\mathbf{c}$. In our particular case, however, where we have to solve a constrained optimization problem, we have to use the Hessian $\bm{\mathcal{H}}_\mathcal{L}$ of the Lagrangian \ref{lagrangian},
+		\begin{equation}\label{hessian_split}
+			\bm{\mathcal{H}}_\mathcal{L} = \bm{\mathcal{H}} + \lambda\bm{\mathcal{H}}_q
+		\end{equation}
+		where the second term $\bm{\mathcal{H}}_q$ is the Hessian of the constraint $q(\mathbf{c})$. In order to evaluate \ref{fisher_hessian} with \ref{hessian_split}, we compute individual elements for both matrices, starting with the first derivative of the negative log-likelihood
+		\begin{align}\label{gradient_logp}
+			-\frac{\partial}{\partial c_u}\log p(x\vert\mathbf{c}) & = -\frac{\partial}{\partial 	c_u}\log\left(\sqrt{p(x)}\right)^2 \nonumber \\
+			& = -2\frac{\partial}{\partial c_u}\log\sqrt{p(x)} \\
+			& = -2\left(\sqrt{p(x)}\right)^{-1}\frac{\partial}{\partial c_u}\sum_{j=0}^{\infty}c_j\phi_j(x)\sqrt{w(x)} \nonumber \\
+			& = -2\left(\sqrt{p(x)}\right)^{-1}\phi_u(x)\sqrt{w(x)} \nonumber
+		\end{align}
+		where we have used eq. \ref{gradient_sqrtp}. Now taking the second derivative with respect to $c_v$, using eqs. \ref{sqrt_series} and \ref{log_likelihood}, we find
+		\begin{align}\label{hessian_logp}
+			-\frac{\partial^2}{\partial c_u\partial c_v}\log p(x\vert\mathbf{c}) & = -2\phi_u(x)\sqrt{w(x)}\frac{\partial}{\partial c_v}\left(\sqrt{p(x)}\right)^{-1} \nonumber \\
+			& = +2\frac{\phi_u(x)\sqrt{w(x)}\frac{\partial}{\partial c_v}\sum_{j=0}^{\infty}c_j\phi_j(x)\sqrt{w(x)}}{\left(\sqrt{p(x)}\right)^{2}} \nonumber \\
+			& = 2\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)}
+		\end{align}
+		and taking the expectation value yields
+		\begin{align}
+			2\,\mathbb{E}\left[\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)}\right] & = 	2\int\limits_a^b\mathrm{d}x\,p(x)\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)} \nonumber \\
+			& = 2\int\limits_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) \\
+			& = 2\delta_{uv} \nonumber
+		\end{align}
+		where we have exploited \ref{orthogonality} in the last step.
+		
+		Moving on to the second term in \ref{hessian_split}, we derive once
+		\begin{equation}\label{gradient_q}
+			\frac{\partial}{\partial c_u}q(\mathbf{c}) = \sum_{j=0}^{\infty}\frac{\partial}{\partial c_u}c_j^2 = 2c_u
+		\end{equation}
+		and twice to arrive at:
+		\begin{equation}
+			\frac{\partial}{\partial c_v}2c_u = 2\delta_{uv}
+		\end{equation}
+		Taking the expectation value does not change the result. Both terms in \ref{hessian_split} are thus $2\mathbbm{1}$ matrices and, comparing it to \ref{fisher_direct}, we see that we would have to require $\lambda = 1$ at the optimal solution point $\mathbf{c}^*$ in order for $\bm{\mathcal{H}}^*_\mathcal{L} = 4\mathbbm{1}$
+		
+		\subsection{Explicit expressions}
+		Regardless of how we chose to minimize the objective function \ref{lagrangian}, we it might be useful to know its gradient and, potentially, also its Hessian. In analogy to eq. \ref{gradient_logp}, we find for the gradient $\nabla_{nll}$ of the negative log-likelihood \ref{log_likelihood}
+		\begin{equation}\label{gradient_num_logp}
+			\nabla_{nll} = -2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)\sqrt{w(x_n)}}{\sqrt{p(x_n)}} = -2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}\bm{\upphi}(x_n)}
+		\end{equation}
+		where $\bm{\upphi}$ stands for the vector $\{\phi_i\}$, the denominator is written as a dot product, and $\sqrt{p(x_n)}$ was substituted by its expansion \ref{sqrt_series}. Given result \ref{gradient_q}, deriving the gradient of the constraint \ref{constraint} is straightforward.
+		\begin{equation}\label{gradient_num_q}
+			\nabla q(\mathbf{c}) = 2\mathbf{c}
+		\end{equation}
+		Together with eqs. \ref{log_likelihood} and \ref{constraint}, these gradients could already be used to perform a \emph{constrained} minimization of the negative log likelihood. If, however, we wish to perform a direct minimization of the objective function \ref{lagrangian}, we also need to develop an expression for the Lagrange parameter $\lambda$. At the optimal solution point $\mathbf{c}^*$, we require
+		\begin{equation*}
+			\nabla\mathcal{L} = \nabla_{nll} + \lambda^*\nabla q = 0
+		\end{equation*}
+		or, using, eqs. \ref{gradient_num_logp} and \ref{gradient_num_q}:
+		\begin{align}
+			-2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)} + 2\lambda^*\mathbf{c}^* & = 0 \nonumber \\
+			\mathbf{c}^* & = \frac{1}{\lambda^*}\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)}
+		\end{align}
+		Substituting this result into \ref{constraint}, we then obtain:
+		\begin{align}\label{lambda}
+			\frac{1}{\lambda^{*2}}\sum_{j=0}^{J}\left(\sum_{n=0}^{N-1}\frac{\phi_j(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)}\right)^2 & = 1 \nonumber \\
+			\lambda^* & = \sqrt{\sum_{j=0}^{J}\left(\sum_{n=0}^{N-1}\frac{\phi_j(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)}\right)^2}
+		\end{align}
+		Using this result also off the optimal solution point, and abbreviating the sum over all $N$ observations with
+		\begin{equation}
+			\bm{\upsigma} = \sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}\bm{\upphi}(x_n)} 
+		\end{equation}
+		and, thus,
+		\begin{equation}
+			\lambda = \lVert\bm{\upsigma}\rVert
+		\end{equation}
+		with $\lVert\cdot\rVert$ the $L^2$ norm, the objective function \ref{lagrangian} can now be rewritten as
+		\begin{equation}
+			\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = -\log p(\mathbf{x}\vert\mathbf{c}) + \lVert\bm{\upsigma}\rVert\left(\lVert\mathbf{c}\rVert^2-1\right)
+		\end{equation}
+		and, using eq. \ref{gradient_num_logp}, its gradient emerges as:
+		\begin{equation}\label{gradient_num_lagrange}
+			\nabla\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = -2\bm{\upsigma} + 2\lVert\bm{\upsigma}\rVert\,\mathbf{c}
+		\end{equation}
+		Should we require also the Hessian in our optimization scheme, there are two options. Firstly, in the same spirit as choosing lambda, one could simply take its value at the optimal solution point, which we have just shown to be:
+		\begin{equation}
+			\nabla\nabla^\mathrm{T}\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = 4\mathbbm{1}
+		\end{equation}
+		Secondly, one could take the derivative of eq. \ref{gradient_num_lagrange}. Using eq. \ref{sqrt_series}, we find the analogue to eq. \ref{hessian_logp} for the Hessian of the negative log-likelihood.
+		\begin{equation}
+			-\nabla\nabla^\mathrm{T}\log p(\mathbf{x}\vert\mathbf{c}) = 2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)\bm{\upphi}^\mathrm{T}(x_n)}{\left[\mathbf{c}\bm{\upphi}(x_n)\right]^2}
+		\end{equation}
+		Applying the product and chain rules of differentiation for the second term in eq. \ref{gradient_num_lagrange} yields
+		\begin{equation}
+			2\lVert\bm{\upsigma}\rVert\,\mathbbm{1} - \frac{1}{\lVert\bm{\upsigma}\rVert}\sum_{n=0}^{N-1}\frac{\mathrm{tr}\left[\mathbbm{1}\bm{\upphi}(x_n)\right]}{\mathbf{c}\bm{\upphi}(x_n)}\frac{\bm{\upphi}(x_n)\mathbf{c}^\mathrm{T}}{\left[\mathbf{c}\bm{\upphi}(x_n)\right]^2}
+		\end{equation}
+		with the final result the sum of the two.
+		
+	\section{The bivariate case}
+				
+\end{document}          
