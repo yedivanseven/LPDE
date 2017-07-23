@@ -1,15 +1,14 @@
-from numpy import ndarray, zeros
+from numpy import zeros, ndarray
+from .degree import Degree
 
 
 class Coefficients:
-    def __init__(self, k_max: int, l_max: int) -> None:
-        self.__k_max = self.__type_and_range_checked(k_max)
-        self.__l_max = self.__type_and_range_checked(l_max)
-        self.__size = self.__k_max * self.__l_max
-        self.__shape = (self.__k_max, self.__l_max)
+    def __init__(self, degree: Degree) -> None:
+        self.__degree = self.__degree_type_checked(degree)
+        self.__size = (self.__degree.k_max + 1) * (self.__degree.l_max + 1) + 1
+        self.__shape = (self.__degree.k_max + 1, self.__degree.l_max + 1)
         self.__vector = zeros(self.__size)
-        self.__vector[0] = 1
-        self.__matrix = self.__vector.reshape(self.__shape)
+        self.__vector[:2] = 1.0
 
     @property
     def vec(self) -> ndarray:
@@ -18,23 +17,15 @@ class Coefficients:
     @vec.setter
     def vec(self, vector: ndarray) -> None:
         self.__vector = self.__vector_type_and_dim_checked(vector)
-        self.__matrix = self.__vector.reshape(self.__shape)
 
     @property
     def mat(self) -> ndarray:
-        return self.__matrix
-
-    @mat.setter
-    def mat(self, matrix: ndarray) -> None:
-        self.__matrix = self.__matrix_type_and_dim_checked(matrix)
-        self.__vector = self.__matrix.ravel()
+        return self.__vector[1:].reshape(self.__shape)
 
     @staticmethod
-    def __type_and_range_checked(value: int) -> int:
-        if not type(value) is int:
-            raise TypeError('Maximum polynomial degree must be an integer!')
-        if value < 0:
-            raise ValueError('Maximum polynomial degree must not be negative!')
+    def __degree_type_checked(value: Degree) -> Degree:
+        if not type(value) is Degree:
+            raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     def __vector_type_and_dim_checked(self, vector: ndarray) -> ndarray:
@@ -45,12 +36,3 @@ class Coefficients:
         if vector.size != self.__size:
             raise ValueError(f'Coeff. vector should be of size {self.__size}!')
         return vector
-
-    def __matrix_type_and_dim_checked(self, matrix: ndarray) -> ndarray:
-        if not type(matrix) is ndarray:
-            raise TypeError('Coefficient matrix must be a numpy array!')
-        if len(matrix.shape) != 2:
-            raise ValueError('Coefficient matrix must be 2-dimensional!')
-        if matrix.shape != self.__shape:
-            raise ValueError('Coefficient matrix is of wrong size!')
-        return matrix
