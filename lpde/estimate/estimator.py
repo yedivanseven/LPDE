@@ -4,7 +4,7 @@ from numpy.linalg import norm
 from scipy.optimize import fmin_ncg
 from pandas import DataFrame
 from ..geometry import Mapper, PointAt
-from .helpers import Coefficients, Scalings, Event, Degree
+from .helpers import Coefficients, Scalings, Event, Degree, Action
 
 
 class DensityEstimate:
@@ -14,25 +14,45 @@ class DensityEstimate:
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
         self.__phi_ijn = DataFrame(index=range(self.__c.vec.size))
+        self.__data_changed_due_to = {Action.ADD: self.__add,
+                                      Action.MOVE: self.__move,
+                                      Action.DELETE: self.__delete}
 
     def at(self, point: PointAt) -> ndarray:
         mapped_point = self.__map.in_from(point)
         return square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
 
     def update_with(self, event: Event) -> None:
-        if event.add and event.id not in self.__phi_ijn.columns:
+        if self.__data_changed_due_to[event.action](event):
+            self.__c.vec = fmin_ncg(self.__lagrangian,
+                                    self.__c.vec,
+                                    self.__gradient_lagrangian,
+                                    disp=False)
+
+    def __add(self, event: Event) -> bool:
+        if event.id not in self.__phi_ijn.columns:
             location = self.__map.in_from(event.location)
             self.__phi_ijn.loc[:, event.id] = \
                 legvander2d(*location, self.__degree).T / self.__scale.vec
-        elif event.id in self.__phi_ijn.columns and not event.add:
-            self.__phi_ijn.drop(event.id, axis=1, inplace=True)
+            return True
         else:
-            return
-        self.__c.vec = fmin_ncg(self.__lagrangian,
-                                self.__c.vec,
-                                self.__gradient_lagrangian,
-                                disp=False)
-        self.__c.vec /= norm(self.__c.vec)
+            return False
+
+    def __move(self, event: Event) -> bool:
+        if event.id in self.__phi_ijn.columns:
+            location = self.__map.in_from(event.location)
+            self.__phi_ijn.loc[:, event.id] = \
+                legvander2d(*location, self.__degree).T / self.__scale.vec
+            return True
+        else:
+            return False
+
+    def __delete(self, event: Event) -> bool:
+        if event.id in self.__phi_ijn.columns:
+            self.__phi_ijn.drop(event.id, axis=1, inplace=True)
+            return True
+        else:
+            return False
 
     def __lagrangian(self, c: ndarray) -> float:
         sqrt_p = c.dot(self.__phi_ijn)
