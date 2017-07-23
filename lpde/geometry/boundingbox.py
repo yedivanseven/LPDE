@@ -17,16 +17,16 @@ class BoundingBox:
         return self.__window.dimensions
 
     @staticmethod
-    def __center_type_checked(center: PointAt) -> PointAt:
-        if not type(center) is PointAt:
+    def __center_type_checked(value: PointAt) -> PointAt:
+        if not type(value) is PointAt:
             raise TypeError('Center must be of type <CenterAt>!')
-        return center
+        return value
 
     @staticmethod
-    def __window_type_checked(window: Window) -> Window:
-        if not type(window) is Window:
+    def __window_type_checked(value: Window) -> Window:
+        if not type(value) is Window:
             raise TypeError('Window must be of type <Window>!')
-        return window
+        return value
 
 if __name__ == '__main__':
     center = PointAt(-43, 57)

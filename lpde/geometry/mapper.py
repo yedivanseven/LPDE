@@ -26,22 +26,22 @@ class Mapper:
         return relative_position
 
     @staticmethod
-    def __box_type_checked(bounds: BoundingBox) -> BoundingBox:
-        if not type(bounds) is BoundingBox:
+    def __box_type_checked(value: BoundingBox) -> BoundingBox:
+        if not type(value) is BoundingBox:
             raise TypeError('Bounds must be of type <BoundingBox>!')
-        return bounds
+        return value
 
     @staticmethod
-    def __width_type_checked(support: WidthOf) -> WidthOf:
-        if not type(support) is WidthOf:
+    def __width_type_checked(value: WidthOf) -> WidthOf:
+        if not type(value) is WidthOf:
             raise TypeError('Support must be of type <WidthOf>!')
-        return support
+        return value
 
     @staticmethod
-    def __point_type_checked(point: PointAt) -> PointAt:
-        if not type(point) is PointAt:
+    def __point_type_checked(value: PointAt) -> PointAt:
+        if not type(value) is PointAt:
             raise TypeError('Point must be of type <PointAt>!')
-        return point
+        return value
 
 if __name__ == '__main__':
     from .window import Window

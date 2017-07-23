@@ -9,12 +9,12 @@ class WidthOf:
         return self.__width
 
     @staticmethod
-    def __type_and_range_checked(width: float) -> float:
-        if type(width) not in (int, float):
+    def __type_and_range_checked(value: float) -> float:
+        if type(value) not in (int, float):
             raise TypeError('width must be a number!')
-        if not 0.0 < width < 2:
+        if not 0.0 < value < 2.0:
             raise ValueError('Width must be between 0 and 2!')
-        return float(width)
+        return float(value)
 
 if __name__ == '__main__':
     width_of = WidthOf(1.2)

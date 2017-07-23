@@ -1,4 +1,4 @@
-from numpy import array, ndarray
+from numpy import array, ndarray, float64
 
 
 class Window:
@@ -12,12 +12,12 @@ class Window:
         return self.__dimensions
 
     @staticmethod
-    def __type_and_range_checked(length: float) -> float:
-        if type(length) not in (int, float):
+    def __type_and_range_checked(value: float) -> float64:
+        if type(value) not in (int, float, float64):
             raise TypeError('Width and height must be numbers!')
-        if not length > 0:
+        if not value > 0:
             raise ValueError('Width and height must be > 0!')
-        return float(length)
+        return float64(value)
 
 if __name__ == '__main__':
     window = Window(23, 56)
