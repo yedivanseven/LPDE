@@ -13,7 +13,7 @@ class DensityEstimate:
         self.__map = self.__type_checked(mapper)
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
-        self.__phi_ijn = DataFrame(index=range(self.__c.vec.size))
+        self.__phi_ijn = DataFrame(index=range(self.__c.size))
         self.__data_changed_due_to = {Action.ADD: self.__add,
                                       Action.MOVE: self.__move,
                                       Action.DELETE: self.__delete}
@@ -35,8 +35,7 @@ class DensityEstimate:
             self.__phi_ijn.loc[:, event.id] = \
                 legvander2d(*location, self.__degree).T / self.__scale.vec
             return True
-        else:
-            return False
+        return False
 
     def __move(self, event: Event) -> bool:
         if event.id in self.__phi_ijn.columns:
@@ -44,26 +43,27 @@ class DensityEstimate:
             self.__phi_ijn.loc[:, event.id] = \
                 legvander2d(*location, self.__degree).T / self.__scale.vec
             return True
-        else:
-            return False
+        return False
 
     def __delete(self, event: Event) -> bool:
         if event.id in self.__phi_ijn.columns:
             self.__phi_ijn.drop(event.id, axis=1, inplace=True)
             return True
-        else:
-            return False
+        return False
 
     def __lagrangian(self, c: ndarray) -> float:
+        # TODO: correct!
         sqrt_p = c.dot(self.__phi_ijn)
         return -log(square(sqrt_p)).sum() + \
                 norm((self.__phi_ijn / sqrt_p).sum(axis=1)) * (c.dot(c) - 1)
 
     def __gradient_lagrangian(self, c: ndarray) -> ndarray:
+        # TODO: correct!
         sigma = (self.__phi_ijn / c.dot(self.__phi_ijn)).sum(axis=1).values
         return -2*sigma + 2*norm(sigma)*c
 
     def _on(self, x_grid: ndarray, y_grid: ndarray) -> ndarray:
+        # TODO: rewrite with legval2d and c.mat!
         phi = legvander2d(x_grid, y_grid, self.__degree).T / self.__scale.vec
         return square(self.__c.vec.dot(phi)).reshape((50, 50))
 

@@ -11,8 +11,12 @@ class Coefficients:
         self.__vector[:2] = 1.0
 
     @property
+    def size(self) -> int:
+        return self.__size
+
+    @property
     def vec(self) -> ndarray:
-        return self.__vector
+        return self.__vector[1:]
 
     @vec.setter
     def vec(self, vector: ndarray) -> None:
