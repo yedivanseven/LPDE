@@ -1,39 +1,70 @@
-from numpy import square, log, ndarray, float64
+from numpy import zeros, square, log, ndarray
 from numpy.polynomial.legendre import legvander2d, legval2d
-from numpy.linalg import norm
-from scipy.optimize import fmin_ncg
+from scipy.optimize import fmin_l_bfgs_b, minimize
 from pandas import DataFrame
 from ..geometry import Mapper, PointAt
-from .helpers import Coefficients, Scalings, Event, Degree, Action
+from .helpers import Coefficients, InitialCoefficients
+from .helpers import Scalings, Event, Degree, Action
+
+GRADIENT_TOLERANCE = 1.0
+MAXIMUM_ITERATIONS = 10000
 
 
 class DensityEstimate:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__type_checked(mapper)
+        self.__c_init = InitialCoefficients(self.__degree)
         self.__c = Coefficients(self.__degree)
+        self.__grad_c = zeros(self.__c.vec.size)
         self.__scale = Scalings(self.__degree)
-        self.__phi_ijn = DataFrame(index=range(self.__c.size))
+        self.__phi_ijn = DataFrame(index=range(self.__c.mat.size))
         self.__data_changed_due_to = {Action.ADD: self.__add,
                                       Action.MOVE: self.__move,
                                       Action.DELETE: self.__delete}
+        self.__constraint = {'type': 'eq',
+                             'fun': self.__norm,
+                             'jac': self.__grad_norm}
+        self.__options = {'maxiter': MAXIMUM_ITERATIONS,
+                          'disp': False}
+        self._number_of_fallbacks = 0
+        self._number_of_failures = 0
+        self.__N = 0
 
     def at(self, point: PointAt) -> ndarray:
         mapped_point = self.__map.in_from(point)
         return square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
 
     def update_with(self, event: Event) -> None:
-        if self.__data_changed_due_to[event.action](event):
-            self.__c.vec = fmin_ncg(self.__lagrangian,
-                                    self.__c.vec,
-                                    self.__gradient_lagrangian,
-                                    disp=False)
+        if not self.__data_changed_due_to[event.action](event):
+            return
+        self.__c_init.lagrange = self.__N
+        coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
+                                                self.__c_init.vec,
+                                                self.__grad_lagrangian,
+                                                **self.__options)
+        if (status['warnflag'] == 0 and
+                self.__grad_c.dot(self.__grad_c) < GRADIENT_TOLERANCE):
+            self.__c.vec = coefficients
+        else:
+            result = minimize(self.__neg_log_l, self.__c_init.vec[1:],
+                              method='slsqp',
+                              jac=self.__grad_neg_log_l,
+                              constraints=self.__constraint,
+                              options=self.__options)
+            if result.success:
+                self.__c.vec[1:] = result.x
+                self.__c.vec[0] = self.__N
+                self._number_of_fallbacks += 1
+            else:
+                self._number_of_failures += 1
 
     def __add(self, event: Event) -> bool:
         if event.id not in self.__phi_ijn.columns:
             location = self.__map.in_from(event.location)
             self.__phi_ijn.loc[:, event.id] = \
                 legvander2d(*location, self.__degree).T / self.__scale.vec
+            self.__N += 1
             return True
         return False
 
@@ -48,24 +79,36 @@ class DensityEstimate:
     def __delete(self, event: Event) -> bool:
         if event.id in self.__phi_ijn.columns:
             self.__phi_ijn.drop(event.id, axis=1, inplace=True)
+            self.__N -= 1
             return True
         return False
 
     def __lagrangian(self, c: ndarray) -> float:
-        # TODO: correct!
-        sqrt_p = c.dot(self.__phi_ijn)
-        return -log(square(sqrt_p)).sum() + \
-                norm((self.__phi_ijn / sqrt_p).sum(axis=1)) * (c.dot(c) - 1)
+        return -log(square(c[1:].dot(self.__phi_ijn))).sum() + \
+               c[0] * (c[1:].dot(c[1:]) - 1.0)
 
-    def __gradient_lagrangian(self, c: ndarray) -> ndarray:
-        # TODO: correct!
-        sigma = (self.__phi_ijn / c.dot(self.__phi_ijn)).sum(axis=1).values
-        return -2*sigma + 2*norm(sigma)*c
+    def __grad_lagrangian(self, c: ndarray) -> ndarray:
+        self.__grad_c[0] = c[1:].dot(c[1:]) - 1.0
+        self.__grad_c[1:] = -2.0*(self.__phi_ijn /
+                c[1:].dot(self.__phi_ijn)).sum(axis=1) + 2.0*c[0]*c[1:]
+        return self.__grad_c
+
+    def __neg_log_l(self, c: ndarray) -> float:
+        return -log(square(c.dot(self.__phi_ijn))).sum()
+
+    def __grad_neg_log_l(self, c: ndarray) -> ndarray:
+        return -2.0 * (self.__phi_ijn / c.dot(self.__phi_ijn)).sum(axis=1)
 
     def _on(self, x_grid: ndarray, y_grid: ndarray) -> ndarray:
-        # TODO: rewrite with legval2d and c.mat!
-        phi = legvander2d(x_grid, y_grid, self.__degree).T / self.__scale.vec
-        return square(self.__c.vec.dot(phi)).reshape((50, 50))
+        return square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
+
+    @staticmethod
+    def __norm(c: ndarray) -> float:
+        return c.dot(c) - 1.0
+
+    @staticmethod
+    def __grad_norm(c: ndarray) -> ndarray:
+        return 2.0 * c
 
     @property
     def _c(self) -> ndarray:
@@ -75,13 +118,9 @@ class DensityEstimate:
     def _phi(self) -> DataFrame:
         return self.__phi_ijn
 
-    @staticmethod
-    def __normalization(c: ndarray) -> float64:
-        return c.dot(c) - float64(1.0)
-
-    @staticmethod
-    def __gradient_normalization(c: ndarray) -> ndarray:
-        return 2*c
+    @property
+    def _N(self) -> int:
+        return self.__N
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
