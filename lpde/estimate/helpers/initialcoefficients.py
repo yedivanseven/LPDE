@@ -10,8 +10,12 @@ class InitialCoefficients:
         self.__vector[:2] = 1.0
 
     @property
-    def vec(self) -> ndarray:
+    def vector(self) -> ndarray:
         return self.__vector
+
+    @property
+    def coeffs(self) -> ndarray:
+        return self.__vector[1:]
 
     @property
     def lagrange(self) -> float64:
@@ -34,3 +38,12 @@ class InitialCoefficients:
         if value < 0:
             raise ValueError('Lagrange multiplier must not be negative!')
         return value
+
+
+if __name__ == '__main__':
+    degree = Degree(5, 5)
+    c_init = InitialCoefficients(degree)
+    c_init.lagrange = 10
+    print(c_init.vector)
+    print(c_init.lagrange)
+    print(c_init.coeffs)

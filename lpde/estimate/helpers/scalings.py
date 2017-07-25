@@ -23,3 +23,10 @@ class Scalings:
         if not type(value) is Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
+
+
+if __name__ == '__main__':
+    degree = Degree(5, 5)
+    scale = Scalings(degree)
+    print(scale.mat)
+    print(scale.vec)

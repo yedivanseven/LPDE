@@ -44,3 +44,12 @@ class Event:
             raise TypeError('Location must be of type <PointAt>!')
         return value
 
+
+if __name__ == '__main__':
+    from uuid import uuid4
+
+    point = PointAt(1, 2)
+    event = Event(uuid4(), Action.ADD, point)
+    print(event.location.position)
+    print(event.action)
+    print(event.id)

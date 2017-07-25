@@ -5,11 +5,11 @@ class PointAt:
     def __init__(self, x: float, y: float) -> None:
         self.__x = self.__type_checked(x)
         self.__y = self.__type_checked(y)
-        self.__location = array((self.__x, self.__y))
+        self.__position = array((self.__x, self.__y))
 
     @property
-    def location(self) -> ndarray:
-        return self.__location
+    def position(self) -> ndarray:
+        return self.__position
 
     @staticmethod
     def __type_checked(value: float) -> float:
@@ -17,6 +17,7 @@ class PointAt:
             raise TypeError('Coordinate must be a number!')
         return float(value)
 
+
 if __name__ == '__main__':
     center = PointAt(2, -3)
-    print(center.location)
+    print(center.position)

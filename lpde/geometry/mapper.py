@@ -11,7 +11,7 @@ class Mapper:
 
     def in_from(self, point: PointAt) -> ndarray:
         point = self.__point_type_checked(point)
-        relative_position: ndarray = self.__relative_position_of(point)
+        relative_position = self.__relative_position_of(point)
         return self.__width_of.legendre_support * \
                relative_position / self.__bounds.window
 
@@ -20,8 +20,8 @@ class Mapper:
                self.__bounds.center
 
     def __relative_position_of(self, point: PointAt) -> ndarray:
-        relative_position = point.location - self.__bounds.center
-        if any(2*relative_position.__abs__() > self.__bounds.window):
+        relative_position = point.position - self.__bounds.center
+        if any(2.0*relative_position.__abs__() > self.__bounds.window):
             raise ValueError('Point outside bounding box!')
         return relative_position
 
@@ -42,6 +42,7 @@ class Mapper:
         if not type(value) is PointAt:
             raise TypeError('Point must be of type <PointAt>!')
         return value
+
 
 if __name__ == '__main__':
     from .window import Window

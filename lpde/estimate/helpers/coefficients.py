@@ -5,10 +5,10 @@ from .degree import Degree
 class Coefficients:
     def __init__(self, degree: Degree) -> None:
         self.__degree = self.__degree_type_checked(degree)
-        self.__size = (self.__degree.k_max + 1) * (self.__degree.l_max + 1) + 1
+        self.__size = (self.__degree.k_max + 1) * (self.__degree.l_max + 1)
         self.__shape = (self.__degree.k_max + 1, self.__degree.l_max + 1)
         self.__vector = zeros(self.__size)
-        self.__vector[:2] = 1.0
+        self.__vector[0] = 1.0
 
     @property
     def vec(self) -> ndarray:
@@ -20,7 +20,7 @@ class Coefficients:
 
     @property
     def mat(self) -> ndarray:
-        return self.__vector[1:].reshape(self.__shape)
+        return self.__vector.reshape(self.__shape)
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
@@ -36,3 +36,11 @@ class Coefficients:
         if value.size != self.__size:
             raise ValueError(f'Coeff. vector should be of size {self.__size}!')
         return value
+
+
+if __name__ == '__main__':
+    degree = Degree(5, 5)
+    coefficients = Coefficients(degree)
+    print(coefficients.vec)
+    print(coefficients.mat)
+

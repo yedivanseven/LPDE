@@ -19,6 +19,7 @@ class Window:
             raise ValueError('Width and height must be > 0!')
         return float64(value)
 
+
 if __name__ == '__main__':
     window = Window(23, 56)
     print(window.dimensions)

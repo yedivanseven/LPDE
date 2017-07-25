@@ -19,3 +19,10 @@ class Degree(DegreeBase):
         if value < 0:
             raise ValueError('Maximum polynomial degree must not be negative!')
         return value
+
+
+if __name__ == '__main__':
+    degree = Degree(10, 10)
+    print(degree)
+    print(degree.k_max)
+    print(degree.l_max)
