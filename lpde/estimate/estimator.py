@@ -6,7 +6,7 @@ from ..geometry import Mapper, PointAt
 from .helpers import Coefficients, InitialCoefficients
 from .helpers import Scalings, Event, Degree, Action
 
-GRADIENT_TOLERANCE = 1.0
+GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 
 
@@ -62,7 +62,7 @@ class DensityEstimate:
         if event.id not in self.__phi_ijn.columns:
             location = self.__map.in_from(event.location)
             self.__phi_ijn.loc[:, event.id] = \
-                legvander2d(*location, self.__degree).T.copy() / self.__scale.vec
+                legvander2d(*location, self.__degree).T / self.__scale.vec
             self.__N += 1
             return True
         return False
@@ -71,7 +71,7 @@ class DensityEstimate:
         if event.id in self.__phi_ijn.columns:
             location = self.__map.in_from(event.location)
             self.__phi_ijn.loc[:, event.id] = \
-                legvander2d(*location, self.__degree).T.copy() / self.__scale.vec
+                legvander2d(*location, self.__degree).T / self.__scale.vec
             return True
         return False
 
