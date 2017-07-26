@@ -84,7 +84,7 @@ class DensityEstimate:
 
     def __lagrangian(self, c: ndarray) -> float:
         return -log(square(c[1:].dot(self.__phi_ijn.values))).sum() + \
-               c[0] * (c[1:].dot(c[1:]) - 1.0)
+                c[0] * (c[1:].dot(c[1:]) - 1.0)
 
     def __grad_lagrangian(self, c: ndarray) -> ndarray:
         self.__grad_c[0] = c[1:].dot(c[1:]) - 1.0
