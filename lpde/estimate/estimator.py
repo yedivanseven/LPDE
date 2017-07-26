@@ -85,14 +85,11 @@ class DensityEstimate:
         return False
 
     def __lagrangian(self, c: ndarray) -> float64:
-        return -log(square(c[1:].dot(self.__phi_ijn.values))).sum() + \
-                c[0] * (c[1:].dot(c[1:]) - float64(1.0))
+        return self.__neg_log_l(c[1:]) + c[0]*self.__norm(c[1:])
 
     def __grad_lagrangian(self, c: ndarray) -> ndarray:
-        self.__grad_c[0] = c[1:].dot(c[1:]) - 1.0
-        self.__grad_c[1:] = -2.0*(self.__phi_ijn.values /
-                             c[1:].dot(self.__phi_ijn.values)).sum(axis=1) \
-                            +2.0*c[0]*c[1:]
+        self.__grad_c[0] = self.__norm(c[1:])
+        self.__grad_c[1:] = self.__grad_neg_log_l(c[1:]) + 2.0*c[0]*c[1:]
         return self.__grad_c
 
     def __neg_log_l(self, c: ndarray) -> float64:
