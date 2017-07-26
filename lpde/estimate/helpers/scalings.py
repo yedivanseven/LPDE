@@ -1,4 +1,4 @@
-from numpy import sqrt, array, newaxis, ndarray
+from numpy import sqrt, array, ndarray
 from .degree import Degree
 
 
@@ -8,7 +8,7 @@ class Scalings:
         self.__matrix = array([[2 / sqrt((2*k + 1)*(2*l + 1))
                                 for l in range(self.__degree.l_max + 1)]
                                for k in range(self.__degree.k_max + 1)])
-        self.__vector = self.__matrix.ravel()[:, newaxis]
+        self.__vector = self.__matrix.ravel()
 
     @property
     def vec(self) -> ndarray:

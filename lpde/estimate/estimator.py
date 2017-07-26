@@ -1,4 +1,4 @@
-from numpy import zeros, square, log, ndarray
+from numpy import zeros, square, log, ndarray, float64
 from numpy.polynomial.legendre import legvander2d, legval2d
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from pandas import DataFrame
@@ -19,9 +19,9 @@ class DensityEstimate:
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__scale = Scalings(self.__degree)
         self.__phi_ijn = DataFrame(index=range(self.__c.mat.size))
-        self.__data_changed_due_to = {Action.ADD: self.__add,
-                                      Action.MOVE: self.__move,
-                                      Action.DELETE: self.__delete}
+        self.__handler_of = {Action.ADD: self.__add,
+                             Action.MOVE: self.__move,
+                             Action.DELETE: self.__delete}
         self.__constraint = {'type': 'eq',
                              'fun': self.__norm,
                              'jac': self.__grad_norm}
@@ -31,20 +31,22 @@ class DensityEstimate:
         self._number_of_failures = 0
         self.__N = 0
 
-    def at(self, point: PointAt) -> ndarray:
+    def at(self, point: PointAt) -> float64:
         mapped_point = self.__map.in_from(point)
-        return square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
+        p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
+        return self.__map.out(p)
 
     def update_with(self, event: Event) -> None:
-        if not self.__data_changed_due_to[event.action](event):
+        data_changed_due_to = self.__handler_of[event.action]
+        if not data_changed_due_to(event):
             return
         self.__c_init.lagrange = self.__N
         coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
                                                 self.__c_init.vector,
                                                 self.__grad_lagrangian,
                                                 **self.__options)
-        if (status['warnflag'] == 0 and
-                self.__grad_c.dot(self.__grad_c) < GRADIENT_TOLERANCE):
+        converged = self.__grad_c.dot(self.__grad_c) < GRADIENT_TOLERANCE
+        if (status['warnflag'] == 0) and converged:
             self.__c.vec = coefficients[1:]
         else:
             result = minimize(self.__neg_log_l, self.__c_init.coeffs,
@@ -61,8 +63,8 @@ class DensityEstimate:
     def __add(self, event: Event) -> bool:
         if event.id not in self.__phi_ijn.columns:
             location = self.__map.in_from(event.location)
-            self.__phi_ijn.loc[:, event.id] = \
-                legvander2d(*location, self.__degree).T / self.__scale.vec
+            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+            self.__phi_ijn.loc[:, event.id] = phi_ijn
             self.__N += 1
             return True
         return False
@@ -70,8 +72,8 @@ class DensityEstimate:
     def __move(self, event: Event) -> bool:
         if event.id in self.__phi_ijn.columns:
             location = self.__map.in_from(event.location)
-            self.__phi_ijn.loc[:, event.id] = \
-                legvander2d(*location, self.__degree).T / self.__scale.vec
+            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+            self.__phi_ijn.loc[:, event.id] = phi_ijn
             return True
         return False
 
@@ -82,26 +84,27 @@ class DensityEstimate:
             return True
         return False
 
-    def __lagrangian(self, c: ndarray) -> float:
+    def __lagrangian(self, c: ndarray) -> float64:
         return -log(square(c[1:].dot(self.__phi_ijn.values))).sum() + \
-                c[0] * (c[1:].dot(c[1:]) - 1.0)
+                c[0] * (c[1:].dot(c[1:]) - float64(1.0))
 
     def __grad_lagrangian(self, c: ndarray) -> ndarray:
         self.__grad_c[0] = c[1:].dot(c[1:]) - 1.0
         self.__grad_c[1:] = -2.0*(self.__phi_ijn.values /
-                c[1:].dot(self.__phi_ijn.values)).sum(axis=1) + 2.0*c[0]*c[1:]
+                             c[1:].dot(self.__phi_ijn.values)).sum(axis=1) \
+                            +2.0*c[0]*c[1:]
         return self.__grad_c
 
-    def __neg_log_l(self, c: ndarray) -> float:
+    def __neg_log_l(self, c: ndarray) -> float64:
         return -log(square(c.dot(self.__phi_ijn.values))).sum()
 
     def __grad_neg_log_l(self, c: ndarray) -> ndarray:
-        return -2.0 * (self.__phi_ijn.values /
-                       c.dot(self.__phi_ijn.values)).sum(axis=1)
+        return float64(-2.0) * (self.__phi_ijn.values /
+               c.dot(self.__phi_ijn.values)).sum(axis=1)
 
     @staticmethod
-    def __norm(c: ndarray) -> float:
-        return c.dot(c) - 1.0
+    def __norm(c: ndarray) -> float64:
+        return c.dot(c) - float64(1.0)
 
     @staticmethod
     def __grad_norm(c: ndarray) -> ndarray:
@@ -129,7 +132,7 @@ class DensityEstimate:
         return value
 
     @staticmethod
-    def __mapper_type_checked(mapper: Mapper) -> Mapper:
-        if not type(mapper) is Mapper:
+    def __mapper_type_checked(value: Mapper) -> Mapper:
+        if not type(value) is Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
-        return mapper
+        return value

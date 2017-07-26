@@ -1,4 +1,4 @@
-from numpy import ndarray
+from numpy import ndarray, float64
 from .boundingbox import BoundingBox
 from .support import WidthOf
 from .point import PointAt
@@ -8,16 +8,16 @@ class Mapper:
     def __init__(self, bounds: BoundingBox, support: WidthOf) -> None:
         self.__bounds = self.__box_type_checked(bounds)
         self.__width_of = self.__width_type_checked(support)
+        self.__in_scale = self.__width_of.legendre_support/self.__bounds.window
+        self.__out_scale = float64(4.0 / self.__bounds.window.prod())
 
     def in_from(self, point: PointAt) -> ndarray:
         point = self.__point_type_checked(point)
         relative_position = self.__relative_position_of(point)
-        return self.__width_of.legendre_support * \
-               relative_position / self.__bounds.window
+        return relative_position * self.__in_scale
 
-    def out_from(self, point: ndarray) -> ndarray:
-        return point*(self.__bounds.window/self.__width_of.legendre_support)+ \
-               self.__bounds.center
+    def out(self, density: float64) -> float64:
+        return density * self.__out_scale
 
     def __relative_position_of(self, point: PointAt) -> ndarray:
         relative_position = point.position - self.__bounds.center
@@ -53,12 +53,12 @@ if __name__ == '__main__':
     legendre_width = WidthOf(1)
     mapped = Mapper(box, legendre_width)
 
-    point_a = PointAt(5, 3)
-    mapped_point_a = mapped.in_from(point_a)
-    print(mapped_point_a)
+    point = PointAt(5, 3)
+    mapped_point = mapped.in_from(point)
+    print(mapped_point)
 
-    remapped_point_a = mapped.out_from(mapped_point_a)
-    print(remapped_point_a)
+    remapped_density = mapped.out(0.25)
+    print(remapped_density)
 
 
 
