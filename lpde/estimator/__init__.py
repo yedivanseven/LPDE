@@ -1,1 +1,1 @@
-from .estimator import SerialEstimate
+from .serial import SerialEstimate
