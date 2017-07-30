@@ -3,14 +3,14 @@ from numpy.polynomial.legendre import legvander2d, legval2d
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from pandas import DataFrame
 from ..geometry import Mapper, PointAt
-from .helpers import Coefficients, InitialCoefficients
-from .helpers import Scalings, Event, Degree, Action
+from .datatypes import Coefficients, InitialCoefficients
+from .datatypes import Scalings, Event, Degree, Action
 
 GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 
 
-class DensityEstimate:
+class SerialEstimate:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
@@ -32,11 +32,13 @@ class DensityEstimate:
         self.__N = 0
 
     def at(self, point: PointAt) -> float64:
+        point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
         return self.__map.out(p)
 
     def update_with(self, event: Event) -> None:
+        event = self.__event_type_checked(event)
         data_changed_due_to = self.__handler_of[event.action]
         if not data_changed_due_to(event):
             return
@@ -132,4 +134,16 @@ class DensityEstimate:
     def __mapper_type_checked(value: Mapper) -> Mapper:
         if not type(value) is Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
+        return value
+
+    @staticmethod
+    def __point_type_checked(value: PointAt) -> PointAt:
+        if not type(value) is PointAt:
+            raise TypeError('Point must be of type <PointAt>!')
+        return value
+
+    @staticmethod
+    def __event_type_checked(value: Event) -> Event:
+        if not type(value) is Event:
+            raise TypeError('Event must be of type <Event>!')
         return value
