@@ -2,9 +2,9 @@ from numpy import zeros, square, log, ndarray, float64
 from numpy.polynomial.legendre import legvander2d, legval2d
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from pandas import DataFrame
-from ..geometry import Mapper, PointAt
-from .datatypes import Coefficients, InitialCoefficients
-from .datatypes import Scalings, Event, Degree, Action
+from ...geometry import Mapper, PointAt
+from ..datatypes import Coefficients, InitialCoefficients
+from ..datatypes import Scalings, Event, Degree, Action
 
 GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
