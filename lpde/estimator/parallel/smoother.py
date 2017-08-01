@@ -13,15 +13,16 @@ class Smoother(Process):
         self.__initial = frombuffer(self.__params.smoothed.get_obj()).copy()
 
     def run(self):
-        smooth = self.__initial.copy()
+        smoothed = self.__initial.copy()
         while self.__control != 'stop':
             try:
                 raw = self.__params.coefficients.get_nowait()
             except Empty:
                 raw = self.__initial
-            smooth = self.__params.damp*raw + (1.0-self.__params.damp)*smooth
+            smoothed = self.__params.damp * raw + \
+                       (1.0 - self.__params.damp) * smoothed
             sleep(self.__params.timestep)
-            self.__params.smoothed.get_obj()[:] = smooth
+            self.__params.smoothed.get_obj()[:] = smoothed
             try:
                 self.__control = self.__params.control.get_nowait()
             except Empty:
