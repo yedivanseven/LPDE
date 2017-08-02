@@ -1,5 +1,5 @@
 from ..estimator.datatypes import SmootherParams
-from ..estimator.parallel.smoother import Smoother
+from ..estimator.parallel.smoother import Smoother, STOP
 
 
 class SmootherController:
@@ -8,7 +8,7 @@ class SmootherController:
         self.__params = self.__params_type_checked(params)
 
     def stop(self):
-        self.__params.control.put('stop')
+        self.__params.control.put(STOP)
         self.__params.control.close()
         self.__params.control.join_thread()
         self.__params.coefficients.close()
@@ -18,7 +18,7 @@ class SmootherController:
     @staticmethod
     def __smoother_type_checked(value: Smoother) -> Smoother:
         if not type(value) is Smoother:
-            raise TypeError('Smoother must be of type Smoother!')
+            raise TypeError('Smoother must be of type <Smoother>!')
         return value
 
     @staticmethod

@@ -1,18 +1,17 @@
 from multiprocessing import Array, Queue
-from numpy import exp, float64
+from numpy import float64
 
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
 
 
 class SmootherParams():
-    def __init__(self, control: QUEUE, coefficients: QUEUE, smoothed: ARRAY,
-                 decay: float =1.0, timestep: float =0.1) -> None:
+    def __init__(self, control: QUEUE, coefficients: QUEUE,
+                 smoothed: ARRAY, decay: float =1.0) -> None:
         self.__control = self.__queue_type_checked(control)
         self.__coefficients = self.__queue_type_checked(coefficients)
         self.__smoothed = self.__array_type_checked(smoothed)
-        self.__decay, self.__timestep = self.__checked(decay, timestep)
-        self.__damp = 1.0 - exp(-self.__timestep / self.__decay)
+        self.__decay = self.__float_type_and_range_checked(decay)
 
     @property
     def control(self) -> QUEUE:
@@ -27,12 +26,8 @@ class SmootherParams():
         return self.__smoothed
 
     @property
-    def timestep(self) -> float:
-        return self.__timestep
-
-    @property
-    def damp(self) -> float:
-        return self.__damp
+    def decay(self) -> float:
+        return self.__decay
 
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
@@ -43,16 +38,13 @@ class SmootherParams():
     @staticmethod
     def __array_type_checked(value: ARRAY) -> ARRAY:
         if not type(value) is ARRAY:
-            raise TypeError('Smoothed must be multiprocessing Arrays!')
+            raise TypeError('Smoothed must be a multiprocessing Array!')
         return value
 
     @staticmethod
-    def __checked(decay: float, timestep: float) -> (float, float):
-        allowed_types = (int, float, float64)
-        types_allowed = (type(decay) in allowed_types,
-                         type(timestep) in allowed_types)
-        if not all(types_allowed):
-            raise TypeError('Decay and timestep must be numeric!')
-        if not all((decay > 0, timestep > 0)):
-            raise ValueError('Decay and timestep must > 0 !')
-        return decay, timestep
+    def __float_type_and_range_checked(value: float) -> float:
+        if not type(value) in (int, float, float64):
+            raise TypeError('Decay constant must be a number!')
+        if value <= 0:
+            raise ValueError('Decay constant must be positive !')
+        return value
