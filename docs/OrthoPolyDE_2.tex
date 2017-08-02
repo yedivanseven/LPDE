@@ -18,7 +18,7 @@
 		\item Their index $i=0\ldots\infty$ stands for the highest power of $x$ occurring in the polynomial, also called its \emph{degree}.
 		\item The polynomials are orthogonal on some interval $(a, b)$ with respect to some measure $w(x)$ in the sense that:
 		\begin{equation}\label{orthogonality}
-			\int\limits_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \delta_{ij}
+			\int_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \delta_{ij}
 		\end{equation}
 		\item As such they form a complete basis of all square-integrable $L^2(\mathbb{R})$ functions on the interval $(a, b)$, that is, if $f(x)$ be such a function, then
 		\begin{equation}\label{series}
@@ -26,11 +26,11 @@
 		\end{equation}
 		with constant coefficients $c_j$, which are determined by multiplying eq. \ref{series} from the left with $\phi_i(x)$ and integrating over all $x$.
 		\begin{equation*}
-			\int\limits_a^b\mathrm{d}x\,\phi_i(x)f(x) = \sum_{j=0}^{\infty}c_j\int\limits_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x)
+			\int_a^b\mathrm{d}x\,\phi_i(x)f(x) = \sum_{j=0}^{\infty}c_j\int_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x)
 		\end{equation*}
 		Using eq. \ref{orthogonality} on the right-hand side, we then find:
 		\begin{equation}
-			c_i=\int\limits_a^b\mathrm{d}x\,\phi_i(x)f(x)
+			c_i=\int_a^b\mathrm{d}x\,\phi_i(x)f(x)
 		\end{equation}
 		\item We can approximate $f(x)$ by a \emph{truncated} series
 		\begin{equation}\label{trunc_series}
@@ -72,7 +72,7 @@
 	If, in particular, we wish to expand a univariate probability density function $p(x)$ with a support of $(a,b)$ into a truncated series of the type shown in eq. \ref{trunc_series}, care has to be taken that key properties of $p(x)$ are conserved.
 	\begin{align}
 		p(x) & \ge 0 \label{nonnegativity}\\
-		\int\limits_a^b\mathrm{d}x\,p(x) & = 1 \label{int_to_unity}
+		\int_a^b\mathrm{d}x\,p(x) & = 1 \label{int_to_unity}
 	\end{align}	
 	One way to satisfy constraint \ref{nonnegativity} is to not directly expand $p(x)$ but, rather, its square root.
 	\begin{equation}\label{sqrt_series}
@@ -80,8 +80,15 @@
 	\end{equation}
 	The probability density is then recovered through $p(x)=\left(\sqrt{p(x)}\right)^2$. Substituting expansion \ref{sqrt_series} into constraint \ref{int_to_unity} and using eq. \ref{orthogonality} then yields the following requirement for the expansion coefficients.
 	\begin{equation}\label{coeff_sqr_norm}
-		\sum_{i, j=0}^{J}c_ic_j\int\limits_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \sum_{j=0}^{J}c_j^2 = 1
+		\sum_{i, j=0}^{J}c_ic_j\int_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \sum_{j=0}^{J}c_j^2 = 1
 	\end{equation}
+	If, on the other hand,  we multiply eq. \ref{sqrt_series} with $\phi_i(x)$ and $\sqrt{w(x)}$ and integrate over all $x$, then we find
+	\begin{align}
+		\int_a^b\mathrm{d}x\,\phi_i(x)\sqrt{w(x)}\sqrt{p(x)} & = \sum_{j=0}^{J}c_j\int_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) \nonumber \\ 
+		\int_a^b\mathrm{d}x\,\frac{\phi_i(x)\sqrt{w(x)}}{\sqrt{p(x)}}p(x) & = \sum_{j=0}^{J}c_j\delta_{ij} \\
+		\mathbb{E}\left[\frac{\phi_i(x)}{\sum_{j=0}^{J}c_j\,\phi_j(x)}\right] & = c_i \nonumber
+	\end{align}
+	where we have exploited eqs. \ref{orthogonality} and \ref{sqrt_series} again.
 	
 		\subsection{Density gradient}
 		For the sake of completeness, we note here that the gradient of the density \ref{sqrt_series} is given by:
@@ -133,14 +140,14 @@
 		\subsection{The Fisher information matrix}
 		The elements $\mathcal{F}_{uv}$ of the \emph{Fisher information matrix} $\bm{\mathcal{F}}$ for a probability distribution $p(x\vert\mathbf{c})$ with support $(a,b)$, parameterized by parameters $\mathbf{c}$, can be defined as:
 		\begin{equation}
-			\mathcal{F}_{uv} = \int\limits_a^b\mathrm{d}x\,p(x\vert\mathbf{c})\frac{\partial}{\partial c_u}\log p(x\vert\mathbf{c})\,\frac{\partial}{\partial c_v}\log p(x\vert\mathbf{c})
+			\mathcal{F}_{uv} = \int_a^b\mathrm{d}x\,p(x\vert\mathbf{c})\frac{\partial}{\partial c_u}\log p(x\vert\mathbf{c})\,\frac{\partial}{\partial c_v}\log p(x\vert\mathbf{c})
 		\end{equation}
 		Using our $p(x\vert\mathbf{c})=\left(\sqrt{p(x\vert\mathbf{c})}\right)^2$ yields
 		\begin{align*}
-			\mathcal{F}_{uv} & =  	\int\limits_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2\frac{\partial}{\partial c_u}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)^2\,\frac{\partial}{\partial c_v}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)^2 \\
-			& =  4\int\limits_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2 \frac{\partial}{\partial c_u}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)\,\frac{\partial}{\partial c_v}\log \left(\sqrt{p(x\vert\mathbf{c})}\right) \\
-			& =  4 \int\limits_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2\frac{\frac{\partial}{\partial c_u}\sqrt{p(x\vert\mathbf{c})}}{\sqrt{p(x\vert\mathbf{c})}}\frac{\frac{\partial}{\partial c_v}\sqrt{p(x\vert\mathbf{c})}}{\sqrt{p(x\vert\mathbf{c})}} \\
-			& =  4\int\limits_a^b\mathrm{d}x\,\frac{\partial}{\partial c_u}\sqrt{p(x\vert\mathbf{c})}\,\frac{\partial}{\partial c_v}\sqrt{p(x\vert\mathbf{c})}
+			\mathcal{F}_{uv} & =  	\int_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2\frac{\partial}{\partial c_u}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)^2\,\frac{\partial}{\partial c_v}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)^2 \\
+			& =  4\int_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2 \frac{\partial}{\partial c_u}\log \left(\sqrt{p(x\vert\mathbf{c})}\right)\,\frac{\partial}{\partial c_v}\log \left(\sqrt{p(x\vert\mathbf{c})}\right) \\
+			& =  4 \int_a^b\mathrm{d}x\,\left(\sqrt{p(x\vert\mathbf{c})}\right)^2\frac{\frac{\partial}{\partial c_u}\sqrt{p(x\vert\mathbf{c})}}{\sqrt{p(x\vert\mathbf{c})}}\frac{\frac{\partial}{\partial c_v}\sqrt{p(x\vert\mathbf{c})}}{\sqrt{p(x\vert\mathbf{c})}} \\
+			& =  4\int_a^b\mathrm{d}x\,\frac{\partial}{\partial c_u}\sqrt{p(x\vert\mathbf{c})}\,\frac{\partial}{\partial c_v}\sqrt{p(x\vert\mathbf{c})}
 		\end{align*}
 		and, by substituting expansion \ref{sqrt_series} with derivative
 		\begin{equation}\label{gradient_sqrtp}
@@ -148,7 +155,7 @@
 		\end{equation}
 		and using eq. \ref{orthogonality}, we arrive at
 		\begin{equation*}
-			\mathcal{F}_{uv} = 4\int\limits_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) = 4\delta_{uv}
+			\mathcal{F}_{uv} = 4\int_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) = 4\delta_{uv}
 		\end{equation*}
 		or, expressed in matrix notation,
 		\begin{equation}\label{fisher_direct}
@@ -179,8 +186,8 @@
 		\end{align}
 		and taking the expectation value yields
 		\begin{align}
-			2\,\mathbb{E}\left[\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)}\right] & = 	2\int\limits_a^b\mathrm{d}x\,p(x)\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)} \nonumber \\
-			& = 2\int\limits_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) \\
+			2\,\mathbb{E}\left[\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)}\right] & = 	2\int_a^b\mathrm{d}x\,p(x)\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)} \nonumber \\
+			& = 2\int_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) \\
 			& = 2\delta_{uv} \nonumber
 		\end{align}
 		where we have exploited \ref{orthogonality} in the last step.
