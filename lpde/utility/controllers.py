@@ -1,5 +1,5 @@
-from ..estimator.datatypes import SmootherParams
-from ..estimator.parallel.smoother import Smoother, STOP
+from ..estimator.datatypes import SmootherParams, Control
+from ..estimator.parallel.smoother import Smoother
 
 
 class SmootherController:
@@ -8,7 +8,7 @@ class SmootherController:
         self.__params = self.__params_type_checked(params)
 
     def stop(self):
-        self.__params.control.put(STOP)
+        self.__params.control.put(Control.STOP)
         self.__params.control.close()
         self.__params.control.join_thread()
         self.__params.coefficients.close()
