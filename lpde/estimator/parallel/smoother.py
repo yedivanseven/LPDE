@@ -11,6 +11,7 @@ class Smoother(Process):
         self.__params = self.__params_type_checked(params)
         self.__control = Signal.CONTINUE
         self.__initial = frombuffer(self.__params.smoothed.get_obj()).copy()
+        self.__shape = self.__initial.shape
 
     def run(self):
         raw_coeffs = self.__initial.copy()
@@ -19,7 +20,7 @@ class Smoother(Process):
             start_time = perf_counter()
             try:
                 item_from_queue = self.__params.coefficients.get_nowait()
-                raw_coeffs = self.__array_type_checked(item_from_queue)
+                raw_coeffs = self.__type_and_shape_checked(item_from_queue)
             except Empty:
                 pass
             time_difference = perf_counter() - start_time
@@ -37,8 +38,9 @@ class Smoother(Process):
             raise TypeError('Parameters must be of type <SmootherParams>!')
         return value
 
-    @staticmethod
-    def __array_type_checked(value: ndarray) -> ndarray:
+    def __type_and_shape_checked(self, value: ndarray) -> ndarray:
         if not type(value) is ndarray:
             raise TypeError('Coefficients must be numpy array!')
+        if value.shape != self.__shape:
+            raise ValueError('Read-in coefficient array has wrong shape!')
         return value
