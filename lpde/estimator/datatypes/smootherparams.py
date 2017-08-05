@@ -6,10 +6,10 @@ ARRAY = type(Array('d', 10))
 
 
 class SmootherParams():
-    def __init__(self, control: QUEUE, coefficients: QUEUE,
+    def __init__(self, control: QUEUE, coeff_queue: QUEUE,
                  smoothed: ARRAY, decay: float =1.0) -> None:
         self.__control = self.__queue_type_checked(control)
-        self.__coefficients = self.__queue_type_checked(coefficients)
+        self.__coeff_queue = self.__queue_type_checked(coeff_queue)
         self.__smoothed = self.__array_type_checked(smoothed)
         self.__decay = self.__float_type_and_range_checked(decay)
 
@@ -18,8 +18,8 @@ class SmootherParams():
         return self.__control
 
     @property
-    def coefficients(self) -> QUEUE:
-        return self.__coefficients
+    def coeff_queue(self) -> QUEUE:
+        return self.__coeff_queue
 
     @property
     def smoothed(self) -> ARRAY:
@@ -32,7 +32,7 @@ class SmootherParams():
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
         if not type(value) is QUEUE:
-            raise TypeError('Coefficients must be a multiprocessing Queue!')
+            raise TypeError('Control and coefficients must be Queues!')
         return value
 
     @staticmethod

@@ -34,7 +34,7 @@ class Coefficients:
         if len(value.shape) != 1:
             raise ValueError('Coefficient vector must be 1-dimensional!')
         if value.size != self.__size:
-            raise ValueError(f'Coeff. vector should be of size {self.__size}!')
+            raise ValueError(f'Coefficient vector not of size {self.__size}!')
         return value
 
 

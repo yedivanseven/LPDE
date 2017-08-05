@@ -11,8 +11,8 @@ class SmootherController:
         self.__params.control.put(Signal.STOP)
         self.__params.control.close()
         self.__params.control.join_thread()
-        self.__params.coefficients.close()
-        self.__params.coefficients.join_thread()
+        self.__params.coeff_queue.close()
+        self.__params.coeff_queue.join_thread()
         self.__smoother.join()
 
     @staticmethod

@@ -1,0 +1,129 @@
+from multiprocessing import Array, Queue
+from numpy import square, ndarray, float64, frombuffer
+from numpy.polynomial.legendre import legvander2d, legval2d
+from pandas import DataFrame
+from .smoother import Smoother
+from .minimizer import Minimizer
+from ...geometry import Mapper, PointAt
+from ..datatypes import Coefficients, Scalings, Event, Degree, Action, Signal
+from ..datatypes import SmootherParams, MinimizerParams
+
+GRADIENT_TOLERANCE = 0.1
+MAXIMUM_ITERATIONS = 10000
+
+
+class ParallelEstimate:
+    def __init__(self, degree: Degree, mapper: Mapper) -> None:
+        self.__degree = self.__degree_type_checked(degree)
+        self.__map = self.__mapper_type_checked(mapper)
+        self.__c = Coefficients(self.__degree)
+        self.__scale = Scalings(self.__degree)
+        self.__phi_ijn = DataFrame(index=range(self.__c.mat.size))
+        self.__handler_of = {Action.ADD: self.__add,
+                             Action.MOVE: self.__move,
+                             Action.DELETE: self.__delete}
+        self.__N = 0
+        self.__control = Queue()
+        self.__phi_queue = Queue()
+        self.__coeff_queue = Queue()
+        self.__smoothed = Array('d', self.__c.vec)
+        minimizer_params = MinimizerParams(self.__degree,
+                                           self.__control,
+                                           self.__phi_queue,
+                                           self.__coeff_queue)
+        smoother_params = SmootherParams(self.__control,
+                                         self.__coeff_queue,
+                                         self.__smoothed)
+        self.__minimizer = Minimizer(minimizer_params)
+        self.__smoother = Smoother(smoother_params)
+
+    def start(self):
+        self.__minimizer.start()
+        self.__smoother.start()
+
+    def stop(self):
+        self.__control.put(Signal.STOP)
+        self.__control.close()
+        self.__control.join_thread()
+        self.__phi_queue.close()
+        self.__phi_queue.join_thread()
+        self.__coeff_queue.close()
+        self.__coeff_queue.join_thread()
+        self.__minimizer.join()
+        self.__smoother.join()
+
+    def at(self, point: PointAt) -> float64:
+        point = self.__point_type_checked(point)
+        mapped_point = self.__map.in_from(point)
+        self.__c.vec = frombuffer(self.__smoothed.get_obj())
+        p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
+        return self.__map.out(p)
+
+    def update_with(self, event: Event) -> None:
+        event = self.__event_type_checked(event)
+        data_changed_due_to = self.__handler_of[event.action]
+        if data_changed_due_to(event):
+            self.__phi_queue.put(self.__phi_ijn.values)
+
+    def __add(self, event: Event) -> bool:
+        if event.id not in self.__phi_ijn.columns:
+            location = self.__map.in_from(event.location)
+            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+            self.__phi_ijn.loc[:, event.id] = phi_ijn
+            self.__N += 1
+            return True
+        return False
+
+    def __move(self, event: Event) -> bool:
+        if event.id in self.__phi_ijn.columns:
+            location = self.__map.in_from(event.location)
+            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+            self.__phi_ijn.loc[:, event.id] = phi_ijn
+            return True
+        return False
+
+    def __delete(self, event: Event) -> bool:
+        if event.id in self.__phi_ijn.columns:
+            self.__phi_ijn.drop(event.id, axis=1, inplace=True)
+            self.__N -= 1
+            return True
+        return False
+
+    def _on(self, x_grid: ndarray, y_grid: ndarray) -> ndarray:
+        return square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
+
+    @property
+    def _c(self) -> ndarray:
+        return self.__c.vec
+
+    @property
+    def _phi(self) -> DataFrame:
+        return self.__phi_ijn
+
+    @property
+    def _N(self) -> int:
+        return self.__N
+
+    @staticmethod
+    def __degree_type_checked(value: Degree) -> Degree:
+        if not type(value) is Degree:
+            raise TypeError('Polynomial degree must be of type <Degree>!')
+        return value
+
+    @staticmethod
+    def __mapper_type_checked(value: Mapper) -> Mapper:
+        if not type(value) is Mapper:
+            raise TypeError('Type of mapper must be <Mapper>!')
+        return value
+
+    @staticmethod
+    def __point_type_checked(value: PointAt) -> PointAt:
+        if not type(value) is PointAt:
+            raise TypeError('Point must be of type <PointAt>!')
+        return value
+
+    @staticmethod
+    def __event_type_checked(value: Event) -> Event:
+        if not type(value) is Event:
+            raise TypeError('Event must be of type <Event>!')
+        return value

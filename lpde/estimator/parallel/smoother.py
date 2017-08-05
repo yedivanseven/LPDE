@@ -19,7 +19,7 @@ class Smoother(Process):
         while self.__control != Signal.STOP:
             start_time = perf_counter()
             try:
-                item_from_queue = self.__params.coefficients.get_nowait()
+                item_from_queue = self.__params.coeff_queue.get_nowait()
                 raw_coeffs = self.__type_and_shape_checked(item_from_queue)
             except Empty:
                 pass
