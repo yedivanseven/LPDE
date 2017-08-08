@@ -8,12 +8,15 @@ class SmootherController:
         self.__params = self.__params_type_checked(params)
 
     def stop(self):
-        self.__params.control.put(Signal.STOP)
-        self.__params.control.close()
-        self.__params.control.join_thread()
-        self.__params.coeff_queue.close()
-        self.__params.coeff_queue.join_thread()
-        self.__smoother.join()
+        if not self.__params.control._closed:
+            self.__params.control.put(Signal.STOP)
+            self.__params.control.close()
+            self.__params.control.join_thread()
+        if not self.__params.coeff_queue._closed:
+            self.__params.coeff_queue.close()
+            self.__params.coeff_queue.join_thread()
+        if self.__smoother.is_alive():
+            self.__smoother.join()
 
     @staticmethod
     def __smoother_type_checked(value: Smoother) -> Smoother:

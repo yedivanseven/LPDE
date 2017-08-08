@@ -7,7 +7,7 @@ ARRAY = type(Array('d', 10))
 
 class SmootherParams():
     def __init__(self, control: QUEUE, coeff_queue: QUEUE,
-                 smoothed: ARRAY, decay: float =1.0) -> None:
+                 smoothed: ARRAY, decay) -> None:
         self.__control = self.__queue_type_checked(control)
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
         self.__smoothed = self.__array_type_checked(smoothed)

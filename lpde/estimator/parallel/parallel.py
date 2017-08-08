@@ -27,35 +27,50 @@ class ParallelEstimate:
         self.__phi_queue = Queue()
         self.__coeff_queue = Queue()
         self.__smoothed = Array('d', self.__c.vec)
-        minimizer_params = MinimizerParams(self.__degree,
-                                           self.__control,
-                                           self.__phi_queue,
-                                           self.__coeff_queue)
-        smoother_params = SmootherParams(self.__control,
-                                         self.__coeff_queue,
-                                         self.__smoothed)
-        self.__minimizer = Minimizer(minimizer_params)
-        self.__smoother = Smoother(smoother_params)
+        self.__c.vec = frombuffer(self.__smoothed.get_obj())
 
-    def start(self):
-        self.__minimizer.start()
+    def start(self, decay: float =1.0, n_jobs: int = 1) -> None:
+        self.__start_smoother(decay)
+        self.__start_minimizers(n_jobs)
+
+    def __start_minimizers(self, n_jobs: int =1) -> None:
+        n_jobs = self.__integer_type_and_range_checked(n_jobs)
+        minimize_params = MinimizerParams(self.__degree, self.__control,
+                                          self.__phi_queue, self.__coeff_queue)
+        self.__minimizers = [Minimizer(minimize_params) for _ in range(n_jobs)]
+        for n in range(n_jobs):
+            self.__minimizers[n].start()
+
+    def __start_smoother(self, decay: float =1.0) -> None:
+        smoother_params = SmootherParams(self.__control, self.__coeff_queue,
+                                         self.__smoothed, decay)
+        self.__smoother = Smoother(smoother_params)
         self.__smoother.start()
 
-    def stop(self):
+    def stop(self) -> None:
+        self.__stop_processes()
+        self.__close_queues()
+
+    def __stop_processes(self) -> None:
+        for _ in self.__minimizers:
+            self.__control.put(Signal.STOP)
         self.__control.put(Signal.STOP)
-        self.__control.close()
-        self.__control.join_thread()
-        self.__phi_queue.close()
-        self.__phi_queue.join_thread()
-        self.__coeff_queue.close()
-        self.__coeff_queue.join_thread()
-        self.__minimizer.join()
-        self.__smoother.join()
+        for minimizer in self.__minimizers:
+            if minimizer.is_alive():
+                minimizer.join()
+        if self.__smoother.is_alive():
+            self.__smoother.join()
+
+    def __close_queues(self) -> None:
+        queues = (self.__phi_queue, self.__coeff_queue, self.__control)
+        for queue in queues:
+            if not queue._closed:
+                queue.close()
+                queue.join_thread()
 
     def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
-        self.__c.vec = frombuffer(self.__smoothed.get_obj())
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
         return self.__map.out(p)
 
@@ -93,6 +108,10 @@ class ParallelEstimate:
         return square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
 
     @property
+    def _phi_queue_empty(self) -> bool:
+        return self.__phi_queue.empty()
+
+    @property
     def _c(self) -> ndarray:
         return self.__c.vec
 
@@ -126,4 +145,12 @@ class ParallelEstimate:
     def __event_type_checked(value: Event) -> Event:
         if not type(value) is Event:
             raise TypeError('Event must be of type <Event>!')
+        return value
+
+    @staticmethod
+    def __integer_type_and_range_checked(value: int) -> int:
+        if not type(value) is int:
+            raise TypeError('Number of processes must be an integer!')
+        if value < 1:
+            raise ValueError('Number of processes must be at least 1!')
         return value

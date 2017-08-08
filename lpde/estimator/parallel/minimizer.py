@@ -4,7 +4,7 @@ from numpy import zeros, square, log, ndarray, float64
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import InitialCoefficients, Signal, MinimizerParams
 
-GRADIENT_TOLERANCE = 0.1
+MINIMUM_GRADIENT = 0.1
 MAXIMUM_ITERATIONS = 10000
 
 
@@ -24,24 +24,28 @@ class Minimizer(Process):
 
     def run(self):
         while self.__control != Signal.STOP:
-            item_from_queue = self.__params.phi_queue.get()
-            self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
-            self.__c_init.lagrange = self.__phi_ijn.shape[1]
-            coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
-                                                    self.__c_init.vector,
-                                                    self.__grad_lagrangian,
-                                                    **self.__options)
-            converged = self.__grad_c.dot(self.__grad_c) < GRADIENT_TOLERANCE
-            if (status['warnflag'] == 0) and converged:
-                self.__params.coeff_queue.put(coefficients[1:])
+            try:
+                item_from_queue = self.__params.phi_queue.get_nowait()
+                self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
+            except Empty:
+                pass
             else:
-                result = minimize(self.__neg_log_l, self.__c_init.coeffs,
-                                  method='slsqp',
-                                  jac=self.__grad_neg_log_l,
-                                  constraints=self.__constraint,
-                                  options=self.__options)
-                if result.success:
-                    self.__params.coeff_queue.put(result.x)
+                self.__c_init.lagrange = self.__phi_ijn.shape[1]
+                coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
+                                                        self.__c_init.vector,
+                                                        self.__grad_lagrangian,
+                                                        **self.__options)
+                converged = self.__grad_c.dot(self.__grad_c) < MINIMUM_GRADIENT
+                if (status['warnflag'] == 0) and converged:
+                    self.__params.coeff_queue.put(coefficients[1:])
+                else:
+                    result = minimize(self.__neg_log_l, self.__c_init.coeffs,
+                                      method='slsqp',
+                                      jac=self.__grad_neg_log_l,
+                                      constraints=self.__constraint,
+                                      options=self.__options)
+                    if result.success:
+                        self.__params.coeff_queue.put(result.x)
             try:
                 self.__control = self.__params.control.get_nowait()
             except Empty:
@@ -56,11 +60,10 @@ class Minimizer(Process):
         return self.__grad_c
 
     def __neg_log_l(self, c: ndarray) -> float64:
-        return -log(square(c.dot(self.__phi_ijn.values))).sum()
+        return -log(square(c.dot(self.__phi_ijn))).sum()
 
     def __grad_neg_log_l(self, c: ndarray) -> ndarray:
-        return float64(-2.0) * (self.__phi_ijn.values /
-               c.dot(self.__phi_ijn.values)).sum(axis=1)
+        return float64(-2.0)*(self.__phi_ijn/c.dot(self.__phi_ijn)).sum(axis=1)
 
     @staticmethod
     def __norm(c: ndarray) -> float64:
@@ -80,5 +83,8 @@ class Minimizer(Process):
         if not type(value) is ndarray:
             raise TypeError('Phi_ijn matrix must be a numpy array!')
         if value.shape[0] != self.__c_init.coeffs.size:
-            raise ValueError('Dimension of phi_ijn changed unexpectedly!')
+            raise ValueError('Dimensions of phi_ijn changed unexpectedly!')
+        if value.size == 0:
+            self.__params.coeff_queue.put(self.__c_init.coeffs)
+            raise Empty('Currently, there are no data points to process.')
         return value
