@@ -15,10 +15,9 @@ class Estimator:
     def __init__(self, degree: Degree) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__c = Coefficients(self.__degree)
-        self.__control = Queue()
-        self.__phi_queue = Queue()
-        self.__coeff_queue = Queue()
-        self.__smoothed = Array('d', self.__c.vec)
+        self.__queues = [Queue() for _ in range(3)]
+        self.__control, self.__phi_queue, self.__coeff_queue = self.__queues
+        self.__smooth_coeffs = Array('d', self.__c.vec)
         self.__minimizers = []
         self.__class_prefix = '_' + self.__class__.__name__ + '__'
 
@@ -27,10 +26,13 @@ class Estimator:
         return self.__phi_queue
 
     @property
-    def smoothed(self) -> ARRAY:
-        return self.__smoothed
+    def smooth_coeffs(self) -> ARRAY:
+        return self.__smooth_coeffs
 
-    def start(self, decay: float =1.0, n_jobs: int =1) -> None:
+    def start(self, n_jobs: int =1, decay: float =1.0) -> None:
+        if any(queue._closed for queue in self.__queues):
+            raise OSError('Some queues have been closed. Instantiate a'
+                          ' new <Parallel> object to get going again!')
         self.__start_smoother(decay)
         self.__start_minimizers(n_jobs)
 
@@ -45,7 +47,7 @@ class Estimator:
 
     def __start_smoother(self, decay: float =1.0) -> None:
         smoother_params = SmootherParams(self.__control, self.__coeff_queue,
-                                         self.__smoothed, decay)
+                                         self.__smooth_coeffs, decay)
         if not self.__has('smoother'):
             self.__smoother = Smoother(smoother_params)
             self.__smoother.start()
@@ -68,8 +70,7 @@ class Estimator:
             self.__smoother.join()
 
     def __close_queues(self) -> None:
-        queues = (self.__phi_queue, self.__coeff_queue, self.__control)
-        for queue in queues:
+        for queue in self.__queues:
             queue.close()
             sleep(QUEUE_CLOSE_TIMEOUT)
             queue.join_thread()

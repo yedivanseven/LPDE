@@ -19,8 +19,7 @@ class Parallel:
                              Action.DELETE: self.__delete}
         self.__estimator = Estimator(self.__degree)
         self.__phi_queue = self.__estimator.phi_queue
-        self.__smoothed = self.__estimator.smoothed
-        self.__c.vec = frombuffer(self.__smoothed.get_obj(), dtype=float64)
+        self.__c.vec = frombuffer(self.__estimator.smooth_coeffs.get_obj())
 
     @property
     def estimator(self) -> Estimator:
@@ -39,7 +38,8 @@ class Parallel:
             try:
                 self.__phi_queue.put(self.__phi_ijn.values)
             except AssertionError:
-                err_msg = 'Phi queue is already closed. Restart everything!'
+                err_msg = ('Phi queue is already closed. Instantiate a'
+                           ' new <Parallel> object to get going again!')
                 raise AssertionError(err_msg)
 
     def __add(self, event: Event) -> bool:

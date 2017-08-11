@@ -31,7 +31,8 @@ class Minimizer(Process):
             except Empty:
                 pass
             except OSError:
-                raise OSError('Phi queue is already closed. Restart all!')
+                raise OSError('Phi queue is already closed. Instantiate a'
+                              ' new <Parallel> object to get going again!')
             else:
                 self.__minimize()
             try:
@@ -39,7 +40,8 @@ class Minimizer(Process):
             except Empty:
                 self.__control = Signal.CONTINUE
             except OSError:
-                raise OSError('Control queue is already closed. Restart all!')
+                raise OSError('Control queue is already closed. Instantiate'
+                              ' a new <Parallel> object to get going again!')
 
     def __minimize(self):
         self.__c_init.lagrange = self.__phi_ijn.shape[1]
@@ -52,7 +54,8 @@ class Minimizer(Process):
             try:
                 self.__params.coeff_queue.put(coefficients[1:])
             except AssertionError:
-                err_msg = 'Phi queue is already closed. Restart everything!'
+                err_msg = ('Coefficient queue is already closed. Instantiate'
+                           ' a new <Parallel> object to get going again!')
                 raise AssertionError(err_msg)
         else:
             self.__fallback()
@@ -67,7 +70,8 @@ class Minimizer(Process):
             try:
                 self.__params.coeff_queue.put(result.x)
             except AssertionError:
-                err_msg = 'Phi queue already closed. Restart everything!'
+                err_msg = ('Coefficient queue is already closed. Instantiate'
+                           ' a new <Parallel> object to get going again!')
                 raise AssertionError(err_msg)
 
     def __lagrangian(self, c: ndarray) -> float64:

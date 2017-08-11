@@ -1,5 +1,5 @@
-from ..estimator.datatypes import SmootherParams, Signal
-from ..estimator.parallel.smoother import Smoother
+from ..estimators.datatypes import SmootherParams, Signal
+from ..estimators.parallel.smoother import Smoother
 
 
 class SmootherController:

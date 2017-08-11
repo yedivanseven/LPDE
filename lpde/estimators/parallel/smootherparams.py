@@ -10,7 +10,7 @@ class SmootherParams():
                  smoothed: ARRAY, decay) -> None:
         self.__control = self.__queue_type_checked(control)
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
-        self.__smoothed = self.__array_type_checked(smoothed)
+        self.__smooth_coeffs = self.__array_type_checked(smoothed)
         self.__decay = self.__float_type_and_range_checked(decay)
 
     @property
@@ -22,8 +22,8 @@ class SmootherParams():
         return self.__coeff_queue
 
     @property
-    def smoothed(self) -> ARRAY:
-        return self.__smoothed
+    def smooth_coeffs(self) -> ARRAY:
+        return self.__smooth_coeffs
 
     @property
     def decay(self) -> float:
@@ -38,7 +38,7 @@ class SmootherParams():
     @staticmethod
     def __array_type_checked(value: ARRAY) -> ARRAY:
         if not type(value) is ARRAY:
-            raise TypeError('Smoothed must be a shared multiprocessing Array!')
+            raise TypeError('Smooth coefficients must be a shared Array!')
         return value
 
     @staticmethod

@@ -11,12 +11,12 @@ class Smoother(Process):
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__control = Signal.CONTINUE
-        self.__initial = frombuffer(self.__params.smoothed.get_obj()).copy()
-        self.__shape = self.__initial.shape
+        self.__init = frombuffer(self.__params.smooth_coeffs.get_obj()).copy()
+        self.__shape = self.__init.shape
 
     def run(self):
-        raw_coeffs = self.__initial.copy()
-        smooth_coeffs = self.__initial.copy()
+        raw_coeffs = self.__init.copy()
+        smooth_coeffs = self.__init.copy()
         while self.__control != Signal.STOP:
             start_time = perf_counter()
             try:
@@ -25,18 +25,20 @@ class Smoother(Process):
             except Empty:
                 pass
             except OSError:
-                raise OSError('Coefficient queue already closed. Restart all!')
+                raise OSError('Coefficient queue has been closed. Instantiate'
+                              ' a new <Parallel> object to get going again!')
             time_difference = perf_counter() - start_time
             damping = 1.0 - exp(-time_difference / self.__params.decay)
             smooth_coeffs = damping*raw_coeffs + (1.0-damping)*smooth_coeffs
-            with self.__params.smoothed.get_lock():
-                self.__params.smoothed.get_obj()[:] = smooth_coeffs
+            with self.__params.smooth_coeffs.get_lock():
+                self.__params.smooth_coeffs.get_obj()[:] = smooth_coeffs
             try:
                 self.__control = self.__params.control.get_nowait()
             except Empty:
                 self.__control = Signal.CONTINUE
             except OSError:
-                raise OSError('Control queue is already closed. Restart all!')
+                raise OSError('Control queue is already closed. Instantiate'
+                              ' a new <Parallel> object to get going again!')
 
     @staticmethod
     def __params_type_checked(value: SmootherParams) -> SmootherParams:
