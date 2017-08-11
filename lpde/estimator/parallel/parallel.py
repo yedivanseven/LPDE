@@ -12,7 +12,7 @@ GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 
 
-class ParallelEstimate:
+class Parallel:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
@@ -27,7 +27,7 @@ class ParallelEstimate:
         self.__phi_queue = Queue()
         self.__coeff_queue = Queue()
         self.__smoothed = Array('d', self.__c.vec)
-        self.__c.vec = frombuffer(self.__smoothed.get_obj())
+        self.__c.vec = frombuffer(self.__smoothed.get_obj(), dtype=float64)
 
     def start(self, decay: float =1.0, n_jobs: int = 1) -> None:
         self.__start_smoother(decay)
@@ -72,7 +72,7 @@ class ParallelEstimate:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
-        return self.__map.out(p)
+        return self.__map.out(p * float64(self.__N))
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)

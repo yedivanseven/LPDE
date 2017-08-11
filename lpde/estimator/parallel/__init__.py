@@ -1,1 +1,1 @@
-from .parallel import ParallelEstimate
+from .parallel import Parallel

@@ -112,7 +112,7 @@
 	\end{equation}
 	
 		\subsection{Density gradient}
-		For the sake of completeness, we give the gradient of the bivariate density is as well.
+		For the sake of completeness, we give the gradient of the bivariate density as well.
 		\begin{align}
 			\frac{\partial}{\partial x}p(x, y) & = 2\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\phi_\ell(y)\right]\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\frac{\partial\phi_k(x)}{\partial x}\phi_\ell(y)\right] \\
 			\frac{\partial}{\partial y}p(x, y) & = 2\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\phi_\ell(y)\right]\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\frac{\partial\phi_\ell(y)}{\partial y}\right] \nonumber
@@ -133,7 +133,7 @@
 	\end{equation}
 	can be incorporated through a \emph{Lagrange} parameter $\lambda$ to yield and overall objective function (or Lagrangian $\mathcal{L}$) that needs to be minimized.
 	\begin{equation}\label{lagrangian}
-		\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = -\log p(\mathbf{x}\vert\mathbf{c}) + \lambda q(\mathbf{c})
+		\mathcal{L}(\mathbf{c},\lambda\vert\mathbf{x}) = -\log p(\mathbf{x}\vert\mathbf{c}) + \lambda q(\mathbf{c})
 	\end{equation}
 	Before we do that, however, it is worthwhile to inspect the properties of a particular quantity.
 	
@@ -171,7 +171,7 @@
 		\begin{equation}\label{hessian_split}
 			\bm{\mathcal{H}}_\mathcal{L} = \bm{\mathcal{H}} + \lambda\bm{\mathcal{H}}_q
 		\end{equation}
-		where the second term $\bm{\mathcal{H}}_q$ is the Hessian of the constraint $q(\mathbf{c})$. In order to evaluate \ref{fisher_hessian} with \ref{hessian_split}, we compute individual elements for both matrices, starting with the first derivative of the negative log-likelihood
+		where the second term $\bm{\mathcal{H}}_q$ is the Hessian of the constraint $q(\mathbf{c})$. In order to evaluate \ref{fisher_hessian} with \ref{hessian_split}, we compute individual elements for both matrices, starting with the first derivative of the negative log-likelihood with respect to coefficient $c_v$.
 		\begin{align}\label{gradient_logp}
 			-\frac{\partial}{\partial c_u}\log p(x\vert\mathbf{c}) & = -\frac{\partial}{\partial 	c_u}\log\left(\sqrt{p(x)}\right)^2 \nonumber \\
 			& = -2\frac{\partial}{\partial c_u}\log\sqrt{p(x)} \\
@@ -190,17 +190,31 @@
 			& = 2\int_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) \\
 			& = 2\delta_{uv} \nonumber
 		\end{align}
-		where we have exploited \ref{orthogonality} in the last step.
+		where we have exploited eq. \ref{orthogonality} in the last step. Derivatives of the negative log-likelihood with respect to the Lagrange multiplier $\lambda$ vanish.
 		
-		Moving on to the second term in \ref{hessian_split}, we derive once
+		Moving on to the second term in \ref{hessian_split}, we derive once with respect to $c_u$
 		\begin{equation}\label{gradient_q}
-			\frac{\partial}{\partial c_u}q(\mathbf{c}) = \sum_{j=0}^{\infty}\frac{\partial}{\partial c_u}c_j^2 = 2c_u
+			\frac{\partial}{\partial c_u}\lambda q(\mathbf{c}) = \lambda\sum_{j=0}^{\infty}\frac{\partial}{\partial c_u}c_j^2 = 2\lambda c_u
 		\end{equation}
-		and twice to arrive at:
+		and once with respect to $\lambda$:
+		\begin{equation}\label{gradient_lambda}
+			\frac{\partial}{\partial\lambda}\lambda q(\mathbf{c}) = q(\mathbf{c})	= \sum_{j=0}^{\infty}c_j^2 - 1 
+		\end{equation}
+		Taking again the derivative of eq. \ref{gradient_q} with respect to $c_v$, we find
 		\begin{equation}
-			\frac{\partial}{\partial c_v}2c_u = 2\delta_{uv}
+			\frac{\partial}{\partial c_v}2\lambda c_u = 2\lambda\delta_{uv}
 		\end{equation}
-		Taking the expectation value does not change the result. Both terms in \ref{hessian_split} are thus $2\mathbbm{1}$ matrices and, comparing it to \ref{fisher_direct}, we see that we would have to require $\lambda = 1$ at the optimal solution point $\mathbf{c}^*$ in order for $\bm{\mathcal{H}}^*_\mathcal{L} = 4\mathbbm{1}$
+		and with respect to $\lambda$:
+		\begin{equation}
+			\frac{\partial}{\partial\lambda}2\lambda c_u = 2c_u
+		\end{equation}
+		Finally, we derive eq. \ref{gradient_lambda} with respect to $c_v$ to find
+		\begin{equation}
+			\frac{\partial}{\partial c_v}\left(\sum_{j=0}^{\infty}c_j^2 - 1 \right) = 2c_v
+		\end{equation}
+		while its derivative with respect to $\lambda$ vanishes.
+		
+		Taking the expectation value does not change the result. Both terms in \ref{hessian_split} are thus $2\mathbbm{1}$ matrices and, comparing it to \ref{fisher_direct}, we see that we would have to require $\lambda = 1$ at the optimal solution point $\mathbf{c}^*$ in order for $\bm{\mathcal{H}}^*_\mathcal{L} = 4\mathbbm{1}$. As we will see below, this is certainly the case if, as we have just done, we compute the likelihood for a single observed data point $x$ only.
 		
 		\subsection{Explicit expressions}
 		Regardless of how we chose to minimize the objective function \ref{lagrangian}, we it might be useful to know its gradient and, potentially, also its Hessian. In analogy to eq. \ref{gradient_logp}, we find for the gradient $\nabla_{nll}$ of the negative log-likelihood \ref{log_likelihood}

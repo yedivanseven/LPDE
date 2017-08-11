@@ -10,7 +10,7 @@ GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 
 
-class SerialEstimate:
+class SerialEstimator:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)

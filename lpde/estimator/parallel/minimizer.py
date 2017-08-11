@@ -1,6 +1,6 @@
 from multiprocessing import Process
 from queue import Empty
-from numpy import zeros, square, log, ndarray, float64
+from numpy import zeros, square, log, ndarray, float64, array
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import InitialCoefficients, Signal, MinimizerParams
 
@@ -14,7 +14,7 @@ class Minimizer(Process):
         self.__params = self.__params_type_checked(params)
         self.__c_init = InitialCoefficients(self.__params.degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
-        self.__phi_ijn = None
+        self.__phi_ijn = array([])
         self.__control = Signal.CONTINUE
         self.__options = {'maxiter': MAXIMUM_ITERATIONS,
                           'disp': False}

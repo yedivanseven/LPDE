@@ -38,7 +38,7 @@ class SmootherParams():
     @staticmethod
     def __array_type_checked(value: ARRAY) -> ARRAY:
         if not type(value) is ARRAY:
-            raise TypeError('Smoothed must be a multiprocessing Array!')
+            raise TypeError('Smoothed must be a shared multiprocessing Array!')
         return value
 
     @staticmethod

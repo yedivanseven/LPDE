@@ -1,2 +1,2 @@
-from .serial import SerialEstimate
-from .parallel import ParallelEstimate
+from .serial import SerialEstimator
+from .parallel import Parallel
