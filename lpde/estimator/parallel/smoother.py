@@ -2,7 +2,8 @@ from multiprocessing import Process
 from queue import Empty
 from numpy import frombuffer, exp, ndarray
 from time import perf_counter
-from ..datatypes import SmootherParams, Signal
+from ..datatypes import Signal
+from .smootherparams import SmootherParams
 
 
 class Smoother(Process):
@@ -23,14 +24,19 @@ class Smoother(Process):
                 raw_coeffs = self.__type_and_shape_checked(item_from_queue)
             except Empty:
                 pass
+            except OSError:
+                raise OSError('Coefficient queue already closed. Restart all!')
             time_difference = perf_counter() - start_time
             damping = 1.0 - exp(-time_difference / self.__params.decay)
             smooth_coeffs = damping*raw_coeffs + (1.0-damping)*smooth_coeffs
-            self.__params.smoothed.get_obj()[:] = smooth_coeffs
+            with self.__params.smoothed.get_lock():
+                self.__params.smoothed.get_obj()[:] = smooth_coeffs
             try:
                 self.__control = self.__params.control.get_nowait()
             except Empty:
                 self.__control = Signal.CONTINUE
+            except OSError:
+                raise OSError('Control queue is already closed. Restart all!')
 
     @staticmethod
     def __params_type_checked(value: SmootherParams) -> SmootherParams:

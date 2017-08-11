@@ -1,5 +1,5 @@
 from multiprocessing import Array, Queue
-from .degree import Degree
+from ..datatypes import Degree
 
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))

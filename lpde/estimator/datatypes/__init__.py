@@ -3,7 +3,5 @@ from .coefficients import Coefficients
 from .degree import Degree
 from .event import Event
 from .initialcoefficients import InitialCoefficients
-from .minimizerparams import MinimizerParams
 from .scalings import Scalings
 from .signal import Signal
-from .smootherparams import SmootherParams

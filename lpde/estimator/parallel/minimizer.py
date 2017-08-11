@@ -2,9 +2,10 @@ from multiprocessing import Process
 from queue import Empty
 from numpy import zeros, square, log, ndarray, float64, array
 from scipy.optimize import fmin_l_bfgs_b, minimize
-from ..datatypes import InitialCoefficients, Signal, MinimizerParams
+from ..datatypes import InitialCoefficients, Signal
+from .minimizerparams import MinimizerParams
 
-MINIMUM_GRADIENT = 0.1
+GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 
 
@@ -29,27 +30,45 @@ class Minimizer(Process):
                 self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
             except Empty:
                 pass
+            except OSError:
+                raise OSError('Phi queue is already closed. Restart all!')
             else:
-                self.__c_init.lagrange = self.__phi_ijn.shape[1]
-                coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
-                                                        self.__c_init.vector,
-                                                        self.__grad_lagrangian,
-                                                        **self.__options)
-                converged = self.__grad_c.dot(self.__grad_c) < MINIMUM_GRADIENT
-                if (status['warnflag'] == 0) and converged:
-                    self.__params.coeff_queue.put(coefficients[1:])
-                else:
-                    result = minimize(self.__neg_log_l, self.__c_init.coeffs,
-                                      method='slsqp',
-                                      jac=self.__grad_neg_log_l,
-                                      constraints=self.__constraint,
-                                      options=self.__options)
-                    if result.success:
-                        self.__params.coeff_queue.put(result.x)
+                self.__minimize()
             try:
                 self.__control = self.__params.control.get_nowait()
             except Empty:
                 self.__control = Signal.CONTINUE
+            except OSError:
+                raise OSError('Control queue is already closed. Restart all!')
+
+    def __minimize(self):
+        self.__c_init.lagrange = self.__phi_ijn.shape[1]
+        coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
+                                                self.__c_init.vector,
+                                                self.__grad_lagrangian,
+                                                **self.__options)
+        converged = self.__grad_c.dot(self.__grad_c) < GRADIENT_TOLERANCE
+        if (status['warnflag'] == 0) and converged:
+            try:
+                self.__params.coeff_queue.put(coefficients[1:])
+            except AssertionError:
+                err_msg = 'Phi queue is already closed. Restart everything!'
+                raise AssertionError(err_msg)
+        else:
+            self.__fallback()
+
+    def __fallback(self):
+        result = minimize(self.__neg_log_l, self.__c_init.coeffs,
+                          method='slsqp',
+                          jac=self.__grad_neg_log_l,
+                          constraints=self.__constraint,
+                          options=self.__options)
+        if result.success:
+            try:
+                self.__params.coeff_queue.put(result.x)
+            except AssertionError:
+                err_msg = 'Phi queue already closed. Restart everything!'
+                raise AssertionError(err_msg)
 
     def __lagrangian(self, c: ndarray) -> float64:
         return self.__neg_log_l(c[1:]) + c[0]*self.__norm(c[1:])
