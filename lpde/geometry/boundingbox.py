@@ -46,3 +46,5 @@ if __name__ == '__main__':
     bounding_box = BoundingBox(center, window)
     print(bounding_box.center)
     print(bounding_box.window)
+    print(bounding_box.x_range)
+    print(bounding_box.y_range)

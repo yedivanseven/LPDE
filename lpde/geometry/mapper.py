@@ -66,6 +66,8 @@ if __name__ == '__main__':
     remapped_density = mapped.out(0.25)
     print(remapped_density)
 
+    print(mapped.legendre_interval)
+
 
 
 
