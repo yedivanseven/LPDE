@@ -1,8 +1,8 @@
-from numpy import square, ndarray, float64, frombuffer
+from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legvander2d, legval2d
 from pandas import DataFrame
 from .estimator import Estimator
-from ...geometry import Mapper, PointAt
+from ...geometry import Mapper, PointAt, Grid
 from ..datatypes import Coefficients, Scalings, Event, Degree, Action
 
 
@@ -30,6 +30,13 @@ class Parallel:
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
         return self.__map.out(p * float64(self.__N))
+
+    def on(self, grid: Grid) -> ndarray:
+        grid = self.__grid_type_checked(grid)
+        x_line = linspace(*self.__map.legendre_interval, grid.x)
+        y_line = linspace(*self.__map.legendre_interval, grid.y)
+        x_grid, y_grid = meshgrid(x_line, y_line)
+        return square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)
@@ -65,9 +72,6 @@ class Parallel:
             self.__N -= 1
             return True
         return False
-
-    def _on(self, x_grid: ndarray, y_grid: ndarray) -> ndarray:
-        return square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
 
     @property
     def _phi_queue_empty(self) -> bool:
@@ -107,4 +111,10 @@ class Parallel:
     def __event_type_checked(value: Event) -> Event:
         if not type(value) is Event:
             raise TypeError('Event must be of type <Event>!')
+        return value
+
+    @staticmethod
+    def __grid_type_checked(value: Grid) -> Grid:
+        if not type(value) is Grid:
+            raise TypeError('Grid must be of type <Grid>!')
         return value

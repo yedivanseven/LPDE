@@ -8,8 +8,14 @@ class Mapper:
     def __init__(self, bounds: BoundingBox, support: WidthOf) -> None:
         self.__bounds = self.__box_type_checked(bounds)
         self.__width_of = self.__width_type_checked(support)
+        self.__legendre_interval = (-self.__width_of.legendre_support/2.0,
+                                    +self.__width_of.legendre_support/2.0)
         self.__in_scale = self.__width_of.legendre_support/self.__bounds.window
         self.__out_scale = float64(4.0 / self.__bounds.window.prod())
+
+    @property
+    def legendre_interval(self) -> (float, float):
+        return self.__legendre_interval
 
     def in_from(self, point: PointAt) -> ndarray:
         point = self.__point_type_checked(point)
