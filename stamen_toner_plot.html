@@ -1,0 +1,48 @@
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>Bokeh Plot</title>
+        
+<link rel="stylesheet" href="https://cdn.pydata.org/bokeh/release/bokeh-0.12.6.min.css" type="text/css" />
+        
+<script type="text/javascript" src="https://cdn.pydata.org/bokeh/release/bokeh-0.12.6.min.js"></script>
+<script type="text/javascript">
+    Bokeh.set_log_level("info");
+</script>
+        <style>
+          html {
+            width: 100%;
+            height: 100%;
+          }
+          body {
+            width: 90%;
+            height: 100%;
+            margin: auto;
+          }
+        </style>
+    </head>
+    <body>
+        
+        <div class="bk-root">
+            <div class="bk-plotdiv" id="1c1c7303-b700-4603-935e-acd4f518e6eb"></div>
+        </div>
+        
+        <script type="text/javascript">
+            (function() {
+          var fn = function() {
+            Bokeh.safely(function() {
+              var docs_json = {"95c1212a-b3d3-4396-9ddb-cddf1fd20060":{"roots":{"references":[{"attributes":{},"id":"6fe32619-2094-4ad0-a58c-6b6a155c601a","type":"BasicTicker"},{"attributes":{"callback":null,"end":20000000,"start":-20000000},"id":"55d59771-71fa-4c87-824d-0bd1c3ffa84f","type":"Range1d"},{"attributes":{"dimension":1,"plot":{"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"},"ticker":{"id":"6fe32619-2094-4ad0-a58c-6b6a155c601a","type":"BasicTicker"}},"id":"855060dd-c142-45ea-b973-3409a3a409a1","type":"Grid"},{"attributes":{},"id":"683943e0-f0ae-413c-ba92-080f385bc64a","type":"ToolEvents"},{"attributes":{"plot":{"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"}},"id":"10b7ddfc-9d29-41e2-971d-aa2801fecb43","type":"WheelZoomTool"},{"attributes":{"tile_source":{"id":"e6be880a-b76e-46fd-9f3e-7b4d3e7f2ca2","type":"WMTSTileSource"}},"id":"04683711-51bd-40e6-b514-ec16adb0d2b0","type":"TileRenderer"},{"attributes":{"plot":{"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"}},"id":"7cfd31ee-b212-45fd-b3a4-15beb0cfc1d5","type":"PanTool"},{"attributes":{"below":[{"id":"0ab31d03-10cb-4ea9-a7a6-336011eb0126","type":"LinearAxis"}],"left":[{"id":"0664e200-bb11-4e1a-8357-7618d1a19e58","type":"LinearAxis"}],"renderers":[{"id":"0ab31d03-10cb-4ea9-a7a6-336011eb0126","type":"LinearAxis"},{"id":"6c2082fc-377f-458a-b748-c085718a5947","type":"Grid"},{"id":"0664e200-bb11-4e1a-8357-7618d1a19e58","type":"LinearAxis"},{"id":"855060dd-c142-45ea-b973-3409a3a409a1","type":"Grid"},{"id":"04683711-51bd-40e6-b514-ec16adb0d2b0","type":"TileRenderer"}],"title":{"id":"c90b2d73-5ea0-4e9e-a498-d3d5f486df12","type":"Title"},"tool_events":{"id":"683943e0-f0ae-413c-ba92-080f385bc64a","type":"ToolEvents"},"toolbar":{"id":"33527142-63a1-44a9-884e-9a8ca492c0ea","type":"Toolbar"},"x_range":{"id":"41087f18-2755-4032-b613-d3dd6a7a4c23","type":"Range1d"},"x_scale":{"id":"417531ff-3f0d-4b65-98e0-887f3963d1e5","type":"LinearScale"},"y_range":{"id":"55d59771-71fa-4c87-824d-0bd1c3ffa84f","type":"Range1d"},"y_scale":{"id":"7951b27d-ae74-4297-93a4-b2618a640033","type":"LinearScale"}},"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"},{"attributes":{"attribution":"Map tiles by <a href=\"http://stamen.com\">Stamen Design</a>, under <a href=\"http://creativecommons.org/licenses/by/3.0\">CC BY 3.0</a>. Data by <a href=\"http://openstreetmap.org\">OpenStreetMap</a>, under <a href=\"http://creativecommons.org/licenses/by-sa/3.0\">CC BY SA</a>.","url":"http://tile.stamen.com/terrain/{Z}/{X}/{Y}.png"},"id":"e6be880a-b76e-46fd-9f3e-7b4d3e7f2ca2","type":"WMTSTileSource"},{"attributes":{},"id":"eff463c7-d679-40e7-9461-616fbbfbd196","type":"BasicTickFormatter"},{"attributes":{},"id":"81086993-9dd4-47a3-84f9-61f135d3fec1","type":"BasicTickFormatter"},{"attributes":{"plot":null,"text":""},"id":"c90b2d73-5ea0-4e9e-a498-d3d5f486df12","type":"Title"},{"attributes":{},"id":"417531ff-3f0d-4b65-98e0-887f3963d1e5","type":"LinearScale"},{"attributes":{},"id":"7951b27d-ae74-4297-93a4-b2618a640033","type":"LinearScale"},{"attributes":{"formatter":{"id":"eff463c7-d679-40e7-9461-616fbbfbd196","type":"BasicTickFormatter"},"plot":{"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"},"ticker":{"id":"cd776b47-7ffb-4b0b-9592-b3d1d330a56d","type":"BasicTicker"},"visible":false},"id":"0ab31d03-10cb-4ea9-a7a6-336011eb0126","type":"LinearAxis"},{"attributes":{},"id":"cd776b47-7ffb-4b0b-9592-b3d1d330a56d","type":"BasicTicker"},{"attributes":{"callback":null,"end":20000000,"start":-20000000},"id":"41087f18-2755-4032-b613-d3dd6a7a4c23","type":"Range1d"},{"attributes":{"plot":{"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"},"ticker":{"id":"cd776b47-7ffb-4b0b-9592-b3d1d330a56d","type":"BasicTicker"}},"id":"6c2082fc-377f-458a-b748-c085718a5947","type":"Grid"},{"attributes":{"active_drag":"auto","active_inspect":"auto","active_scroll":"auto","active_tap":"auto","tools":[{"id":"7cfd31ee-b212-45fd-b3a4-15beb0cfc1d5","type":"PanTool"},{"id":"10b7ddfc-9d29-41e2-971d-aa2801fecb43","type":"WheelZoomTool"}]},"id":"33527142-63a1-44a9-884e-9a8ca492c0ea","type":"Toolbar"},{"attributes":{"formatter":{"id":"81086993-9dd4-47a3-84f9-61f135d3fec1","type":"BasicTickFormatter"},"plot":{"id":"bb972d1c-94f2-4386-a773-21f9317b32d3","subtype":"Figure","type":"Plot"},"ticker":{"id":"6fe32619-2094-4ad0-a58c-6b6a155c601a","type":"BasicTicker"},"visible":false},"id":"0664e200-bb11-4e1a-8357-7618d1a19e58","type":"LinearAxis"}],"root_ids":["bb972d1c-94f2-4386-a773-21f9317b32d3"]},"title":"Bokeh Application","version":"0.12.6"}};
+              var render_items = [{"docid":"95c1212a-b3d3-4396-9ddb-cddf1fd20060","elementid":"1c1c7303-b700-4603-935e-acd4f518e6eb","modelid":"bb972d1c-94f2-4386-a773-21f9317b32d3"}];
+              
+              Bokeh.embed.embed_items(docs_json, render_items);
+            });
+          };
+          if (document.readyState != "loading") fn();
+          else document.addEventListener("DOMContentLoaded", fn);
+        })();
+        
+        </script>
+    </body>
+</html>

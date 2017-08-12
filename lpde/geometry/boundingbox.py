@@ -1,4 +1,4 @@
-from numpy import ndarray
+from numpy import ndarray, stack
 from .point import PointAt
 from .window import Window
 
@@ -7,6 +7,9 @@ class BoundingBox:
     def __init__(self, center: PointAt, window: Window) -> None:
         self.__center = self.__point_type_checked(center)
         self.__window = self.__window_type_checked(window)
+        lower = self.__center.position - self.__window.dimensions/2.0
+        upper = self.__center.position + self.__window.dimensions/2.0
+        self.__x_range, self.__y_range = tuple(zip(lower, upper))
 
     @property
     def center(self) -> ndarray:
@@ -15,6 +18,14 @@ class BoundingBox:
     @property
     def window(self) -> ndarray:
         return self.__window.dimensions
+
+    @property
+    def x_range(self) -> (float, float):
+        return self.__x_range
+
+    @property
+    def y_range(self) -> (float, float):
+        return self.__y_range
 
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:
