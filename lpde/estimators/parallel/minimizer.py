@@ -36,7 +36,7 @@ class Minimizer(Process):
             else:
                 self.__minimize()
             try:
-                self.__control = self.__params.control.get_nowait()
+                self.__control = self.__params.control_queue.get_nowait()
             except Empty:
                 self.__control = Signal.CONTINUE
             except OSError:

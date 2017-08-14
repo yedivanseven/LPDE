@@ -1,15 +1,14 @@
-from multiprocessing import Array, Queue
+from multiprocessing import Queue
 from ..datatypes import Degree
 
 QUEUE = type(Queue())
-ARRAY = type(Array('d', 10))
 
 
 class MinimizerParams:
-    def __init__(self, degree: Degree, control: QUEUE,
+    def __init__(self, degree: Degree, control_queue: QUEUE,
                  phi_queue: QUEUE, coeff_queue: QUEUE) -> None:
         self.__degree = self.__degree_type_checked(degree)
-        self.__control = self.__queue_type_checked(control)
+        self.__control_queue = self.__queue_type_checked(control_queue)
         self.__phi_queue = self.__queue_type_checked(phi_queue)
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
 
@@ -18,8 +17,8 @@ class MinimizerParams:
         return self.__degree
 
     @property
-    def control(self):
-        return self.__control
+    def control_queue(self):
+        return self.__control_queue
 
     @property
     def phi_queue(self):

@@ -1,12 +1,12 @@
 from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legvander2d, legval2d
 from pandas import DataFrame
-from .estimator import Estimator
+from .controller import Controller
 from ...geometry import Mapper, PointAt, Grid
 from ..datatypes import Coefficients, Scalings, Event, Degree, Action
 
 
-class Parallel:
+class ParallelEstimator:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
@@ -17,13 +17,13 @@ class Parallel:
         self.__handler_of = {Action.ADD: self.__add,
                              Action.MOVE: self.__move,
                              Action.DELETE: self.__delete}
-        self.__estimator = Estimator(self.__degree)
-        self.__phi_queue = self.__estimator.phi_queue
-        self.__c.vec = frombuffer(self.__estimator.smooth_coeffs.get_obj())
+        self.__controller = Controller(self.__degree)
+        self.__phi_queue = self.__controller.phi_queue
+        self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
 
     @property
-    def estimator(self) -> Estimator:
-        return self.__estimator
+    def controller(self) -> Controller:
+        return self.__controller
 
     def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)

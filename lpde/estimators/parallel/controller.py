@@ -11,12 +11,12 @@ ARRAY = type(Array('d', 10))
 QUEUE_CLOSE_TIMEOUT = 1e-6
 
 
-class Estimator:
+class Controller:
     def __init__(self, degree: Degree) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__c = Coefficients(self.__degree)
         self.__queues = [Queue() for _ in range(3)]
-        self.__control, self.__phi_queue, self.__coeff_queue = self.__queues
+        self.__control_queue, self.__phi_queue, self.__coeff_queue = self.__queues
         self.__smooth_coeffs = Array('d', self.__c.vec)
         self.__minimizers = []
         self.__class_prefix = '_' + self.__class__.__name__ + '__'
@@ -38,7 +38,7 @@ class Estimator:
 
     def __start_minimizers(self, n_jobs: int =1) -> None:
         n_jobs = self.__integer_type_and_range_checked(n_jobs)
-        params = MinimizerParams(self.__degree, self.__control,
+        params = MinimizerParams(self.__degree, self.__control_queue,
                                  self.__phi_queue, self.__coeff_queue)
         for n in range(n_jobs):
             minimizer = Minimizer(params)
@@ -46,7 +46,7 @@ class Estimator:
             self.__minimizers.append(minimizer)
 
     def __start_smoother(self, decay: float =1.0) -> None:
-        smoother_params = SmootherParams(self.__control, self.__coeff_queue,
+        smoother_params = SmootherParams(self.__control_queue, self.__coeff_queue,
                                          self.__smooth_coeffs, decay)
         if not self.__has('smoother'):
             self.__smoother = Smoother(smoother_params)
@@ -59,8 +59,8 @@ class Estimator:
     def __stop_processes(self) -> None:
         try:
             for _ in self.__minimizers:
-                self.__control.put(Signal.STOP)
-            self.__control.put(Signal.STOP)
+                self.__control_queue.put(Signal.STOP)
+            self.__control_queue.put(Signal.STOP)
         except AssertionError:
             pass
         for minimizer in self.__minimizers:

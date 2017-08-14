@@ -33,7 +33,7 @@ class Smoother(Process):
             with self.__params.smooth_coeffs.get_lock():
                 self.__params.smooth_coeffs.get_obj()[:] = smooth_coeffs
             try:
-                self.__control = self.__params.control.get_nowait()
+                self.__control = self.__params.control_queue.get_nowait()
             except Empty:
                 self.__control = Signal.CONTINUE
             except OSError:

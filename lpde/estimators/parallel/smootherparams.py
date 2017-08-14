@@ -6,16 +6,16 @@ ARRAY = type(Array('d', 10))
 
 
 class SmootherParams():
-    def __init__(self, control: QUEUE, coeff_queue: QUEUE,
+    def __init__(self, control_queue: QUEUE, coeff_queue: QUEUE,
                  smoothed: ARRAY, decay) -> None:
-        self.__control = self.__queue_type_checked(control)
+        self.__control_queue = self.__queue_type_checked(control_queue)
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
         self.__smooth_coeffs = self.__array_type_checked(smoothed)
         self.__decay = self.__float_type_and_range_checked(decay)
 
     @property
-    def control(self) -> QUEUE:
-        return self.__control
+    def control_queue(self) -> QUEUE:
+        return self.__control_queue
 
     @property
     def coeff_queue(self) -> QUEUE:
