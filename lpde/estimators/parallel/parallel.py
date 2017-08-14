@@ -12,13 +12,13 @@ class ParallelEstimator:
         self.__map = self.__mapper_type_checked(mapper)
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
-        self.__phi_ijn = DataFrame(index=range(self.__c.mat.size))
-        self.__N = 0
-        self.__handler_of = {Action.ADD: self.__add,
-                             Action.MOVE: self.__move,
-                             Action.DELETE: self.__delete}
-        self.__controller = Controller(self.__degree)
-        self.__phi_queue = self.__controller.phi_queue
+#        self.__phi_ijn = DataFrame(index=range(self.__c.mat.size))
+#        self.__N = 0
+#        self.__handler_of = {Action.ADD: self.__add,
+#                             Action.MOVE: self.__move,
+#                             Action.DELETE: self.__delete}
+        self.__controller = Controller(self.__degree, self.__map)
+#        self.__phi_queue = self.__controller.phi_queue
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
 
     @property
@@ -29,65 +29,71 @@ class ParallelEstimator:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
-        return self.__map.out(p * float64(self.__N))
+        return self.__map.out(p * float64(self.__controller.N))
 
     def on(self, grid: Grid) -> ndarray:
         grid = self.__grid_type_checked(grid)
         x_line = linspace(*self.__map.legendre_interval, grid.x)
         y_line = linspace(*self.__map.legendre_interval, grid.y)
         x_grid, y_grid = meshgrid(x_line, y_line)
-        return square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
+        p = square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
+        return p * float64(self.__controller.N)
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)
-        data_changed_due_to = self.__handler_of[event.action]
-        if data_changed_due_to(event):
-            try:
-                self.__phi_queue.put(self.__phi_ijn.values)
-            except AssertionError:
-                err_msg = ('Phi queue is already closed. Instantiate a'
-                           ' new <Parallel> object to get going again!')
-                raise AssertionError(err_msg)
+        try:
+            self.__controller.event_queue.put(event)
+        except AssertionError:
+            raise AssertionError('Event queue is already closed. Instantiate a'
+                                 ' new <Parallel> object to get going again!')
+ #       data_changed_due_to = self.__handler_of[event.action]
+ #       if data_changed_due_to(event):
+ #           try:
+ #               self.__phi_queue.put(self.__phi_ijn.values)
+ #           except AssertionError:
+ #               err_msg = ('Phi queue is already closed. Instantiate a'
+ #                          ' new <Parallel> object to get going again!')
+ #               raise AssertionError(err_msg)
 
-    def __add(self, event: Event) -> bool:
-        if event.id not in self.__phi_ijn.columns:
-            location = self.__map.in_from(event.location)
-            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-            self.__phi_ijn.loc[:, event.id] = phi_ijn
-            self.__N += 1
-            return True
-        return False
+ #   def __add(self, event: Event) -> bool:
+ #       if event.id not in self.__phi_ijn.columns:
+ #           location = self.__map.in_from(event.location)
+ #           phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+  #          self.__phi_ijn.loc[:, event.id] = phi_ijn
+  #          self.__N += 1
+  #          return True
+  #      return False
+#
+#    def __move(self, event: Event) -> bool:
+#        if event.id in self.__phi_ijn.columns:
+#            location = self.__map.in_from(event.location)
+#            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+#            self.__phi_ijn.loc[:, event.id] = phi_ijn
+#            return True
+#        return False
 
-    def __move(self, event: Event) -> bool:
-        if event.id in self.__phi_ijn.columns:
-            location = self.__map.in_from(event.location)
-            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-            self.__phi_ijn.loc[:, event.id] = phi_ijn
-            return True
-        return False
+ #   def __delete(self, event: Event) -> bool:
+ #       if event.id in self.__phi_ijn.columns:
+ #           self.__phi_ijn.drop(event.id, axis=1, inplace=True)
+ #           self.__N -= 1
+ #           return True
+ #       return False
 
-    def __delete(self, event: Event) -> bool:
-        if event.id in self.__phi_ijn.columns:
-            self.__phi_ijn.drop(event.id, axis=1, inplace=True)
-            self.__N -= 1
-            return True
-        return False
-
-    @property
-    def _phi_queue_empty(self) -> bool:
-        return self.__phi_queue.empty()
+ #   @property
+ #   def _phi_queue_empty(self) -> bool:
+ #       return self.__phi_queue.empty()
 
     @property
     def _c(self) -> ndarray:
         return self.__c.vec
 
-    @property
-    def _phi(self) -> DataFrame:
-        return self.__phi_ijn
+ #   @property
+ #   def _phi(self) -> DataFrame:
+ #       return self.__phi_ijn
 
-    @property
-    def _N(self) -> int:
-        return self.__N
+#    @property
+#    def _N(self) -> int:
+#        return self.__N
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
