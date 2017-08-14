@@ -19,12 +19,11 @@ class Controller:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
-        self.__c = Coefficients(self.__degree)
         self.__control_queue = Queue()
         self.__event_queue = Queue()
         self.__phi_queue = Queue()
         self.__coeff_queue = Queue()
-        self.__smooth_coeffs = Array('d', self.__c.vec)
+        self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
         self.__transformer_params = TransformerParams(self.__degree,
                                                       self.__mapper,
                                                       self.__control_queue,
@@ -47,7 +46,7 @@ class Controller:
 
     @property
     def N(self) -> int:
-        return self.__transformer.N
+        return self.__transformer.N if self.__has('transformer') else 0
 
     @property
     def smooth_coeffs(self) -> ARRAY:

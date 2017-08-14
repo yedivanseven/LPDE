@@ -12,13 +12,7 @@ class ParallelEstimator:
         self.__map = self.__mapper_type_checked(mapper)
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
-#        self.__phi_ijn = DataFrame(index=range(self.__c.mat.size))
-#        self.__N = 0
-#        self.__handler_of = {Action.ADD: self.__add,
-#                             Action.MOVE: self.__move,
-#                             Action.DELETE: self.__delete}
         self.__controller = Controller(self.__degree, self.__map)
-#        self.__phi_queue = self.__controller.phi_queue
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
 
     @property
@@ -46,54 +40,9 @@ class ParallelEstimator:
         except AssertionError:
             raise AssertionError('Event queue is already closed. Instantiate a'
                                  ' new <Parallel> object to get going again!')
- #       data_changed_due_to = self.__handler_of[event.action]
- #       if data_changed_due_to(event):
- #           try:
- #               self.__phi_queue.put(self.__phi_ijn.values)
- #           except AssertionError:
- #               err_msg = ('Phi queue is already closed. Instantiate a'
- #                          ' new <Parallel> object to get going again!')
- #               raise AssertionError(err_msg)
-
- #   def __add(self, event: Event) -> bool:
- #       if event.id not in self.__phi_ijn.columns:
- #           location = self.__map.in_from(event.location)
- #           phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-  #          self.__phi_ijn.loc[:, event.id] = phi_ijn
-  #          self.__N += 1
-  #          return True
-  #      return False
-#
-#    def __move(self, event: Event) -> bool:
-#        if event.id in self.__phi_ijn.columns:
-#            location = self.__map.in_from(event.location)
-#            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-#            self.__phi_ijn.loc[:, event.id] = phi_ijn
-#            return True
-#        return False
-
- #   def __delete(self, event: Event) -> bool:
- #       if event.id in self.__phi_ijn.columns:
- #           self.__phi_ijn.drop(event.id, axis=1, inplace=True)
- #           self.__N -= 1
- #           return True
- #       return False
-
- #   @property
- #   def _phi_queue_empty(self) -> bool:
- #       return self.__phi_queue.empty()
-
     @property
     def _c(self) -> ndarray:
         return self.__c.vec
-
- #   @property
- #   def _phi(self) -> DataFrame:
- #       return self.__phi_ijn
-
-#    @property
-#    def _N(self) -> int:
-#        return self.__N
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
