@@ -23,7 +23,7 @@ class Minimizer(Process):
                              'fun': self.__norm,
                              'jac': self.__grad_norm}
 
-    def run(self):
+    def run(self) -> None:
         while self.__control != Signal.STOP:
             try:
                 item_from_queue = self.__params.phi_queue.get_nowait()
@@ -43,7 +43,7 @@ class Minimizer(Process):
                 raise OSError('Control queue is already closed. Instantiate'
                               ' a new <Parallel> object to get going again!')
 
-    def __minimize(self):
+    def __minimize(self) -> None:
         self.__c_init.lagrange = self.__phi_ijn.shape[1]
         coefficients, _, status = fmin_l_bfgs_b(self.__lagrangian,
                                                 self.__c_init.vector,
@@ -60,7 +60,7 @@ class Minimizer(Process):
         else:
             self.__fallback()
 
-    def __fallback(self):
+    def __fallback(self) -> None:
         result = minimize(self.__neg_log_l, self.__c_init.coeffs,
                           method='slsqp',
                           jac=self.__grad_neg_log_l,

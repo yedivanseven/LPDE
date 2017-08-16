@@ -14,7 +14,7 @@ class Smoother(Process):
         self.__init = frombuffer(self.__params.smooth_coeffs.get_obj()).copy()
         self.__shape = self.__init.shape
 
-    def run(self):
+    def run(self) -> None:
         raw_coeffs = self.__init.copy()
         smooth_coeffs = self.__init.copy()
         while self.__control != Signal.STOP:

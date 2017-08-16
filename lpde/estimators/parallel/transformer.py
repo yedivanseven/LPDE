@@ -19,7 +19,7 @@ class Transformer(Process):
                              Action.DELETE: self.__delete}
         self.__control = Signal.CONTINUE
 
-    def run(self):
+    def run(self) -> None:
         while self.__control != Signal.STOP:
             try:
                 item_from_queue = self.__params.event_queue.get_nowait()
