@@ -1,4 +1,4 @@
-from multiprocessing import Queue, Array
+from multiprocessing import Process, Queue, Array
 from time import sleep
 from numpy import float64
 from ..datatypes import Degree, Coefficients, Signal
@@ -23,6 +23,10 @@ class Controller:
         self.__event_queue = Queue()
         self.__phi_queue = Queue()
         self.__coeff_queue = Queue()
+        self.__queues = (self.__control_queue,
+                         self.__event_queue,
+                         self.__phi_queue,
+                         self.__coeff_queue)
         self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
         self.__transformer_params = TransformerParams(self.__degree,
                                                       self.__mapper,
@@ -33,16 +37,57 @@ class Controller:
                                                   self.__control_queue,
                                                   self.__phi_queue,
                                                   self.__coeff_queue)
-        self.__queues = (self.__control_queue,
-                         self.__event_queue,
-                         self.__phi_queue,
-                         self.__coeff_queue)
         self.__minimizers = []
         self.__class_prefix = '_' + self.__class__.__name__ + '__'
 
     @property
+    def control_queue(self) -> QUEUE:
+        return self.__control_queue
+
+    @property
     def event_queue(self) -> QUEUE:
         return self.__event_queue
+
+    @property
+    def phi_queue(self) -> QUEUE:
+        return self.__phi_queue
+
+    @property
+    def coeff_queue(self) -> QUEUE:
+        return self.__coeff_queue
+
+    @property
+    def transformer(self) -> Process:
+        if self.__has('transformer'):
+            return self.__transformer
+        raise AttributeError('Transformer process not started yet!')
+
+    @property
+    def minimizers(self) -> list:
+        if self.__minimizers:
+            return self.__minimizers
+        raise AttributeError('Minimizer processe(s) not started yet!')
+
+    @property
+    def smoother(self) -> Process:
+        if self.__has('smoother'):
+            return self.__smoother
+        raise AttributeError('Smoother process not started yet!')
+
+    @property
+    def all_alive(self) -> bool:
+        alive = False
+        if self.__has('transformer'):
+            alive = alive or self.__transformer.is_alive()
+        for minimizer in self.__minimizers:
+            alive= alive and minimizer.is_alive()
+        if self.__has('smoother'):
+            alive = alive and self.__smoother.is_alive()
+        return alive
+
+    @property
+    def n_jobs(self) -> int:
+        return len(self.__minimizers)
 
     @property
     def N(self) -> int:
@@ -57,8 +102,8 @@ class Controller:
             raise OSError('Some queues have been closed. Instantiate a'
                           ' new <Parallel> object to get going again!')
         self.__start_transformer()
-        self.__start_smoother(decay)
         self.__start_minimizers(n_jobs)
+        self.__start_smoother(decay)
 
     def __start_transformer(self) -> None:
         if not self.__has('transformer'):

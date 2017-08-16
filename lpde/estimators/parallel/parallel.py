@@ -1,9 +1,8 @@
 from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
-from numpy.polynomial.legendre import legvander2d, legval2d
-from pandas import DataFrame
+from numpy.polynomial.legendre import legval2d
 from .controller import Controller
 from ...geometry import Mapper, PointAt, Grid
-from ..datatypes import Coefficients, Scalings, Event, Degree, Action
+from ..datatypes import Coefficients, Scalings, Event, Degree
 
 
 class ParallelEstimator:
@@ -40,8 +39,9 @@ class ParallelEstimator:
         except AssertionError:
             raise AssertionError('Event queue is already closed. Instantiate a'
                                  ' new <Parallel> object to get going again!')
+
     @property
-    def _c(self) -> ndarray:
+    def coefficients(self) -> ndarray:
         return self.__c.vec
 
     @staticmethod
