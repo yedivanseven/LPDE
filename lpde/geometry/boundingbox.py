@@ -1,4 +1,4 @@
-from numpy import ndarray, stack
+from numpy import ndarray
 from .point import PointAt
 from .window import Window
 
@@ -26,6 +26,12 @@ class BoundingBox:
     @property
     def y_range(self) -> (float, float):
         return self.__y_range
+
+    def contain(self, point: PointAt) -> bool:
+        point = self.__point_type_checked(point)
+        x_inside = self.__x_range[0] <= point.position[0] <= self.__x_range[1]
+        y_inside = self.__y_range[0] <= point.position[1] <= self.__y_range[1]
+        return True if x_inside and y_inside else False
 
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:

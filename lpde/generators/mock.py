@@ -9,11 +9,11 @@ QUEUE = type(Queue())
 
 
 class MockParams:
-    def __init__(self, rate: float, burn_in: int, n_events: int,
+    def __init__(self, rate: float, build_up: int, n_events: int,
                  bounds: BoundingBox, dist: callable, event_queue: QUEUE):
         self.__rate = self.__float_type_and_range_checked(rate)
-        self.__burn = self.__integer_type_and_range_checked(burn_in)
-        self.__n = self.__integer_type_and_range_checked(n_events)
+        self.__build_up = self.__integer_type_and_range_checked(build_up)
+        self.__n_events = self.__integer_type_and_range_checked(n_events)
         self.__bounds = self.__bounds_type_checked(bounds)
         self.__dist = self.__function_type_checked(dist)
         self.__event_queue = self.__queue_type_checked(event_queue)
@@ -23,12 +23,12 @@ class MockParams:
         return self.__rate
 
     @property
-    def burn_in(self) -> int:
-        return self.__burn
+    def build_up(self) -> int:
+        return self.__build_up
 
     @property
     def n_events(self) -> int:
-        return self.__n
+        return self.__n_events
 
     @property
     def bounds(self) -> BoundingBox:
@@ -53,9 +53,9 @@ class MockParams:
     @staticmethod
     def __integer_type_and_range_checked(value) -> int:
         if not type(value) is int:
-            raise TypeError('Burn-in and number of events must be integers!')
+            raise TypeError('Build-up and number of events must be integers!')
         if value <= 0:
-            raise ValueError('Burn-in and number of events must be positive!')
+            raise ValueError('Build-up and number of events must be positive!')
         return value
 
     @staticmethod
@@ -70,11 +70,11 @@ class MockParams:
         try:
             return_value = value(self.__bounds)
         except:
-            raise RuntimeError('Call to distribution failed!')
+            raise RuntimeError('Call to distribution function failed!')
         if not type(return_value) is PointAt:
             raise TypeError('Return value of distribution must be <PointAt>!')
-        # TODO: Augment PointAt class by "in" method taking a bounding box!
-        # TODO: Check if returned point is in bounding box, raise error if not!
+        if not self.__bounds.contain(return_value):
+            raise ValueError('Returned point lies outside bounding box!')
         return value
 
     @staticmethod
@@ -94,7 +94,7 @@ class MockGenerator(Process):
                               -1: self.__delete}
 
     def run(self) -> None:
-        for _ in range(self.__params.burn_in):
+        for _ in range(self.__params.build_up):
             event = self.__add()
             self.__push(event)
         for _ in range(self.__params.n_events):
