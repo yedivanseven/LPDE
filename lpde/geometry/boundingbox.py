@@ -33,6 +33,8 @@ class BoundingBox:
         y_inside = self.__y_range[0] <= point.position[1] <= self.__y_range[1]
         return True if x_inside and y_inside else False
 
+    contains = contain
+
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:
         if not type(value) is PointAt:

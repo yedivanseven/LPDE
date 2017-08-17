@@ -2,21 +2,20 @@ from time import sleep
 from random import randint, expovariate, sample
 from uuid import uuid4
 from multiprocessing import Process, Queue
-from ..geometry import PointAt, BoundingBox
+from numpy import float64
+from ..geometry import PointAt, Window, BoundingBox
 from ..estimators.datatypes import Action, Event
 
 QUEUE = type(Queue())
 
 
 class MockParams:
-    def __init__(self, rate: float, build_up: int, n_events: int,
-                 bounds: BoundingBox, dist: callable, event_queue: QUEUE):
+    def __init__(self, rate: float, build_up: int,
+                 n_events: int, dist: callable) -> None:
         self.__rate = self.__float_type_and_range_checked(rate)
         self.__build_up = self.__integer_type_and_range_checked(build_up)
         self.__n_events = self.__integer_type_and_range_checked(n_events)
-        self.__bounds = self.__bounds_type_checked(bounds)
         self.__dist = self.__function_type_checked(dist)
-        self.__event_queue = self.__queue_type_checked(event_queue)
 
     @property
     def rate(self) -> float:
@@ -31,21 +30,13 @@ class MockParams:
         return self.__n_events
 
     @property
-    def bounds(self) -> BoundingBox:
-        return self.__bounds
-
-    @property
     def dist(self) -> callable:
         return self.__dist
 
-    @property
-    def event_queue(self) -> QUEUE:
-        return self.__event_queue
-
     @staticmethod
     def __float_type_and_range_checked(value: float) -> float:
-        if not type(value) is float:
-            raise TypeError('Rate parameter must be a floating point number!')
+        if not type(value) in (int, float, float64):
+            raise TypeError('Rate parameter must be a number!')
         if value <= 0.0:
             raise ValueError('Rate parameter must be positive!')
         return value
@@ -59,35 +50,30 @@ class MockParams:
         return value
 
     @staticmethod
-    def __bounds_type_checked(value: BoundingBox) -> BoundingBox:
-        if not type(value) is BoundingBox:
-            raise TypeError('Bounds must be of type <BoundingBox>!')
-        return value
-
-    def __function_type_checked(self, value: callable) -> callable:
-        if not type(value) is function:
-            raise TypeError('Distribution must be a callable function!')
+    def __function_type_checked(value: callable) -> callable:
+        if not callable(value):
+            raise TypeError('Distribution must be callable!')
+        center = PointAt(0, 0)
+        window = Window(3, 2)
+        bounds = BoundingBox(center, window)
         try:
-            return_value = value(self.__bounds)
+            return_value = value(bounds)
         except:
             raise RuntimeError('Call to distribution function failed!')
         if not type(return_value) is PointAt:
             raise TypeError('Return value of distribution must be <PointAt>!')
-        if not self.__bounds.contain(return_value):
+        if not bounds.contain(return_value):
             raise ValueError('Returned point lies outside bounding box!')
         return value
 
-    @staticmethod
-    def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if not type(value) is QUEUE:
-            raise TypeError('Event queue must be a multiprocessing Queue!')
-        return value
 
-
-class MockGenerator(Process):
-    def __init__(self, params: MockParams) -> None:
+class MockProducer(Process):
+    def __init__(self, params: MockParams, bounds: BoundingBox,
+                 event_queue: QUEUE) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
+        self.__bounds = self.__bounds_type_checked(bounds)
+        self.__event_queue = self.__queue_type_checked(event_queue)
         self.__points = {}
         self.__according_to = {1: self.__add,
                                0: self.__move,
@@ -98,40 +84,56 @@ class MockGenerator(Process):
             event = self.__add()
             self.__push(event)
         for _ in range(self.__params.n_events):
-            event_type = randint(-1, 1)
+            event_type = randint(-1, 1) if self.__points else 1
             event = self.__according_to[event_type]()
             self.__push(event)
 
     def __add(self) -> Event:
-        location = self.__params.dist(self.__params.bounds)
+        location = self.__new_location()
         uuid = uuid4()
         self.__points[uuid] = location
         return Event(uuid, Action.ADD, location)
 
     def __move(self) -> Event:
-        location = self.__params.dist(self.__params.bounds)
-        uuid = sample(self.__points.keys())
+        location = self.__new_location()
+        uuid = sample(self.__points.keys(), 1)[0]
         self.__points[uuid] = location
         return Event(uuid, Action.MOVE, location)
 
     def __delete(self) -> Event:
-        uuid = sample(self.__points.keys())
+        uuid = sample(self.__points.keys(), 1)[0]
         _ = self.__points.pop(uuid)
         return Event(uuid, Action.DELETE)
 
     def __push(self, event: Event) -> None:
         sleep(expovariate(self.__params.rate))
         try:
-            self.__params.event_queue.put(event)
+            self.__event_queue.put(event)
         except AssertionError:
             err_msg = ('Event queue is already closed. Instantiate'
                        ' a new <Parallel> object to get going again!')
             raise AssertionError(err_msg)
 
+    def __new_location(self) -> PointAt:
+        location: PointAt = self.__params.dist(self.__bounds)
+        if not self.__bounds.contain(location):
+            raise ValueError('Distribution returned point out of bounds!')
+        return location
+
     @staticmethod
     def __params_type_checked(value: MockParams) -> MockParams:
         if not type(value) is MockParams:
-            raise TypeError('Parameters  must be of type <MockParams>!')
+            raise TypeError('Parameters must be of type <MockParams>!')
         return value
 
+    @staticmethod
+    def __bounds_type_checked(value: BoundingBox) -> BoundingBox:
+        if not type(value) is BoundingBox:
+            raise TypeError('Bounds must be of type <BoundingBox>!')
+        return value
 
+    @staticmethod
+    def __queue_type_checked(value: QUEUE) -> QUEUE:
+        if not type(value) is QUEUE:
+            raise TypeError('Event queue must be a multiprocessing Queue!')
+        return value

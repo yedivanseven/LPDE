@@ -17,19 +17,17 @@ class Mapper:
     def legendre_interval(self) -> (float, float):
         return self.__legendre_interval
 
+    @property
+    def bounds(self) -> BoundingBox:
+        return self.__bounds
+
     def in_from(self, point: PointAt) -> ndarray:
-        point = self.__point_type_checked(point)
-        relative_position = self.__relative_position_of(point)
+        point = self.__point_type_and_range_checked(point)
+        relative_position = point.position - self.__bounds.center
         return relative_position * self.__in_scale
 
     def out(self, density: float64) -> float64:
         return density * self.__out_scale
-
-    def __relative_position_of(self, point: PointAt) -> ndarray:
-        relative_position = point.position - self.__bounds.center
-        if any(2.0*relative_position.__abs__() > self.__bounds.window):
-            raise ValueError('Point outside bounding box!')
-        return relative_position
 
     @staticmethod
     def __box_type_checked(value: BoundingBox) -> BoundingBox:
@@ -43,10 +41,11 @@ class Mapper:
             raise TypeError('Support must be of type <WidthOf>!')
         return value
 
-    @staticmethod
-    def __point_type_checked(value: PointAt) -> PointAt:
+    def __point_type_and_range_checked(self, value: PointAt) -> PointAt:
         if not type(value) is PointAt:
             raise TypeError('Point must be of type <PointAt>!')
+        if not self.__bounds.contain(value):
+            raise ValueError('Point lies outside bounding box!')
         return value
 
 
@@ -63,7 +62,7 @@ if __name__ == '__main__':
     mapped_point = mapped.in_from(point)
     print(mapped_point)
 
-    remapped_density = mapped.out(0.25)
+    remapped_density = mapped.out(float64(0.25))
     print(remapped_density)
 
     print(mapped.legendre_interval)

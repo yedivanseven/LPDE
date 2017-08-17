@@ -1,22 +1,31 @@
 from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legval2d
 from .controller import Controller
-from ...geometry import Mapper, PointAt, Grid
 from ..datatypes import Coefficients, Scalings, Event, Degree
+from ...geometry import Mapper, PointAt, Grid
+from ...producers import MockParams, MockProducer
 
 
 class ParallelEstimator:
-    def __init__(self, degree: Degree, mapper: Mapper) -> None:
+    def __init__(self, degree: Degree, mapper: Mapper,
+                 producer_params: MockParams) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
+        producer_params = self.__producer_params_type_checked(producer_params)
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
         self.__controller = Controller(self.__degree, self.__map)
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
+        self.__producer = MockProducer(producer_params, self.__map.bounds,
+                                       self.__controller.event_queue)
 
     @property
     def controller(self) -> Controller:
         return self.__controller
+
+    @property
+    def producer(self) -> MockProducer:
+        return self.__producer
 
     def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)
@@ -54,6 +63,12 @@ class ParallelEstimator:
     def __mapper_type_checked(value: Mapper) -> Mapper:
         if not type(value) is Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
+        return value
+
+    @staticmethod
+    def __producer_params_type_checked(value: MockParams) -> MockParams:
+        if not type(value) is MockParams:
+            raise TypeError('Type of parameters must be <ProducerParams>!')
         return value
 
     @staticmethod

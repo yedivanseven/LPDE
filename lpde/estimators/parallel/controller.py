@@ -66,7 +66,7 @@ class Controller:
     def minimizers(self) -> list:
         if self.__minimizers:
             return self.__minimizers
-        raise AttributeError('Minimizer processe(s) not started yet!')
+        raise AttributeError('Minimizer process(es) not started yet!')
 
     @property
     def smoother(self) -> Process:
@@ -101,9 +101,9 @@ class Controller:
         if any(queue._closed for queue in self.__queues):
             raise OSError('Some queues have been closed. Instantiate a'
                           ' new <Parallel> object to get going again!')
-        self.__start_transformer()
-        self.__start_minimizers(n_jobs)
         self.__start_smoother(decay)
+        self.__start_minimizers(n_jobs)
+        self.__start_transformer()
 
     def __start_transformer(self) -> None:
         if not self.__has('transformer'):
