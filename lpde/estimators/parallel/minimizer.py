@@ -16,7 +16,6 @@ class Minimizer(Process):
         self.__c_init = InitialCoefficients(self.__params.degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__phi_ijn = array([])
-        self.__control = Signal.CONTINUE
         self.__options = {'maxiter': MAXIMUM_ITERATIONS,
                           'disp': False}
         self.__constraint = {'type': 'eq',
@@ -24,7 +23,8 @@ class Minimizer(Process):
                              'jac': self.__grad_norm}
 
     def run(self) -> None:
-        while self.__control != Signal.STOP:
+        signal = Signal.CONTINUE
+        while signal != Signal.STOP:
             try:
                 item_from_queue = self.__params.phi_queue.get_nowait()
                 self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
@@ -36,9 +36,10 @@ class Minimizer(Process):
             else:
                 self.__minimize()
             try:
-                self.__control = self.__params.control_queue.get_nowait()
+                item_from_queue = self.__params.control_queue.get_nowait()
+                signal = self.__signal_type_checked(item_from_queue)
             except Empty:
-                self.__control = Signal.CONTINUE
+                signal = Signal.CONTINUE
             except OSError:
                 raise OSError('Control queue is already closed. Instantiate'
                               ' a new <Parallel> object to get going again!')
@@ -51,12 +52,7 @@ class Minimizer(Process):
                                                 **self.__options)
         converged = self.__grad_c.dot(self.__grad_c) < GRADIENT_TOLERANCE
         if (status['warnflag'] == 0) and converged:
-            try:
-                self.__params.coeff_queue.put(coefficients[1:])
-            except AssertionError:
-                err_msg = ('Coefficient queue is already closed. Instantiate'
-                           ' a new <Parallel> object to get going again!')
-                raise AssertionError(err_msg)
+            self.__push(coefficients[1:])
         else:
             self.__fallback()
 
@@ -67,12 +63,15 @@ class Minimizer(Process):
                           constraints=self.__constraint,
                           options=self.__options)
         if result.success:
-            try:
-                self.__params.coeff_queue.put(result.x)
-            except AssertionError:
-                err_msg = ('Coefficient queue is already closed. Instantiate'
-                           ' a new <Parallel> object to get going again!')
-                raise AssertionError(err_msg)
+            self.__push(result.x)
+
+    def __push(self, data: ndarray) -> None:
+        try:
+            self.__params.coeff_queue.put(data)
+        except AssertionError:
+            err_msg = ('Coefficient queue is already closed. Instantiate'
+                       ' a new <Parallel> object to get going again!')
+            raise AssertionError(err_msg)
 
     def __lagrangian(self, c: ndarray) -> float64:
         return self.__neg_log_l(c[1:]) + c[0]*self.__norm(c[1:])
@@ -108,6 +107,12 @@ class Minimizer(Process):
         if value.shape[0] != self.__c_init.coeffs.size:
             raise ValueError('Dimensions of phi_ijn changed unexpectedly!')
         if value.size == 0:
-            self.__params.coeff_queue.put(self.__c_init.coeffs)
+            self.__push(self.__c_init.coeffs)
             raise Empty('Currently, there are no data points to process.')
+        return value
+
+    @staticmethod
+    def __signal_type_checked(value: Signal) -> Signal:
+        if not type(value) is Signal:
+            raise TypeError('Signal must be of type <Signal>!')
         return value

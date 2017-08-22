@@ -9,6 +9,7 @@ from .minimizerparams import MinimizerParams
 from .minimizer import Minimizer
 from .transformerparams import TransformerParams
 from .transformer import Transformer
+from ...producers import MockParams, MockProducer
 
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
@@ -16,9 +17,11 @@ QUEUE_CLOSE_TIMEOUT = 1e-6
 
 
 class Controller:
-    def __init__(self, degree: Degree, mapper: Mapper) -> None:
+    def __init__(self, degree: Degree, mapper: Mapper,
+                 producer_params: MockParams) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
+        self.__producer_params = self.__params_type_checked(producer_params)
         self.__control_queue = Queue()
         self.__event_queue = Queue()
         self.__phi_queue = Queue()
@@ -57,6 +60,12 @@ class Controller:
         return self.__coeff_queue
 
     @property
+    def producer(self) -> Process:
+        if self.__has('producer'):
+            return self.__producer
+        raise AttributeError('Producer process not started yet!')
+
+    @property
     def transformer(self) -> Process:
         if self.__has('transformer'):
             return self.__transformer
@@ -75,14 +84,15 @@ class Controller:
         raise AttributeError('Smoother process not started yet!')
 
     @property
-    def all_alive(self) -> bool:
-        alive = False
-        if self.__has('transformer'):
-            alive = alive or self.__transformer.is_alive()
-        for minimizer in self.__minimizers:
-            alive= alive and minimizer.is_alive()
-        if self.__has('smoother'):
-            alive = alive and self.__smoother.is_alive()
+    def are_alive(self) -> dict:
+        alive = {'producer': False, 'transformer': False, 'smoother': False}
+        if self.__has('producer') and self.__producer.is_alive():
+            alive['producer'] = True
+        if self.__has('transformer') and self.__transformer.is_alive():
+            alive['transformer'] = True
+        if self.__has('smoother') and self.__smoother.is_alive():
+            alive['smoother'] = True
+        alive['minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
         return alive
 
     @property
@@ -94,7 +104,7 @@ class Controller:
         return self.__transformer.N if self.__has('transformer') else 0
 
     @property
-    def smooth_coeffs(self) -> ARRAY:
+    def coefficients(self) -> ARRAY:
         return self.__smooth_coeffs
 
     def start(self, n_jobs: int =1, decay: float =1.0) -> None:
@@ -104,6 +114,15 @@ class Controller:
         self.__start_smoother(decay)
         self.__start_minimizers(n_jobs)
         self.__start_transformer()
+        self.__start_producer()
+
+    def __start_producer(self) -> None:
+        if not self.__has('producer'):
+            self.__producer = MockProducer(self.__producer_params,
+                                           self.__mapper.bounds,
+                                           self.__control_queue,
+                                           self.__event_queue)
+            self.__producer.start()
 
     def __start_transformer(self) -> None:
         if not self.__has('transformer'):
@@ -131,19 +150,21 @@ class Controller:
 
     def __stop_processes(self) -> None:
         try:
+            self.__control_queue.put(Signal.STOP)
+            self.__control_queue.put(Signal.STOP)
             for _ in self.__minimizers:
                 self.__control_queue.put(Signal.STOP)
             self.__control_queue.put(Signal.STOP)
-            self.__control_queue.put(Signal.STOP)
         except AssertionError:
             pass
-        if self.__has('transformer') and self.__transformer.is_alive():
-            self.__transformer.join()
-        for minimizer in self.__minimizers:
-            if minimizer.is_alive():
-                minimizer.join()
-        if self.__has('smoother') and self.__smoother.is_alive():
-            self.__smoother.join()
+#        if self.__has('producer'):
+#            self.__producer.join()
+#        if self.__has('transformer'):
+#            self.__transformer.join()
+#        for minimizer in self.__minimizers:
+#            minimizer.join()
+#        if self.__has('smoother'):
+#            self.__smoother.join()
 
     def __close_queues(self) -> None:
         for queue in self.__queues:
@@ -177,6 +198,13 @@ class Controller:
             raise TypeError('Decay constant must be a number!')
         if value <= 0:
             raise ValueError('Decay constant must be positive !')
+        return value
+
+    @staticmethod
+    def __params_type_checked(value: MockParams) -> MockParams:
+        if not type(value) is MockParams:
+            err_msg = 'Producer parameter must be of type <ProducerParams>!'
+            raise TypeError(err_msg)
         return value
 
     def __has(self, attribute):

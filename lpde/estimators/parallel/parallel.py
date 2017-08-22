@@ -3,7 +3,7 @@ from numpy.polynomial.legendre import legval2d
 from .controller import Controller
 from ..datatypes import Coefficients, Scalings, Event, Degree
 from ...geometry import Mapper, PointAt, Grid
-from ...producers import MockParams, MockProducer
+from ...producers import MockParams
 
 
 class ParallelEstimator:
@@ -11,21 +11,15 @@ class ParallelEstimator:
                  producer_params: MockParams) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
-        producer_params = self.__producer_params_type_checked(producer_params)
+        params = self.__producer_params_type_checked(producer_params)
+        self.__controller = Controller(self.__degree, self.__map, params)
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
-        self.__controller = Controller(self.__degree, self.__map)
-        self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
-        self.__producer = MockProducer(producer_params, self.__map.bounds,
-                                       self.__controller.event_queue)
+        self.__c.vec = frombuffer(self.__controller.coefficients.get_obj())
 
     @property
     def controller(self) -> Controller:
         return self.__controller
-
-    @property
-    def producer(self) -> MockProducer:
-        return self.__producer
 
     def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)

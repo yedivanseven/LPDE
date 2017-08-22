@@ -1,20 +1,19 @@
 from time import sleep
 from random import randint, expovariate, sample
 from uuid import uuid4
+from queue import Empty
 from multiprocessing import Process, Queue
 from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
-from ..estimators.datatypes import Action, Event
+from ..estimators.datatypes import Action, Event, Signal
 
 QUEUE = type(Queue())
 
 
 class MockParams:
-    def __init__(self, rate: float, build_up: int,
-                 n_events: int, dist: callable) -> None:
+    def __init__(self, rate: float, build_up: int, dist: callable) -> None:
         self.__rate = self.__float_type_and_range_checked(rate)
         self.__build_up = self.__integer_type_and_range_checked(build_up)
-        self.__n_events = self.__integer_type_and_range_checked(n_events)
         self.__dist = self.__function_type_checked(dist)
 
     @property
@@ -24,10 +23,6 @@ class MockParams:
     @property
     def build_up(self) -> int:
         return self.__build_up
-
-    @property
-    def n_events(self) -> int:
-        return self.__n_events
 
     @property
     def dist(self) -> callable:
@@ -69,10 +64,11 @@ class MockParams:
 
 class MockProducer(Process):
     def __init__(self, params: MockParams, bounds: BoundingBox,
-                 event_queue: QUEUE) -> None:
+                 control_queue: QUEUE, event_queue: QUEUE) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__bounds = self.__bounds_type_checked(bounds)
+        self.__control_queue = self.__queue_type_checked(control_queue)
         self.__event_queue = self.__queue_type_checked(event_queue)
         self.__points = {}
         self.__according_to = {1: self.__add,
@@ -80,13 +76,25 @@ class MockProducer(Process):
                               -1: self.__delete}
 
     def run(self) -> None:
-        for _ in range(self.__params.build_up):
-            event = self.__add()
-            self.__push(event)
-        for _ in range(self.__params.n_events):
-            event_type = randint(-1, 1) if self.__points else 1
-            event = self.__according_to[event_type]()
-            self.__push(event)
+        n_points = 0
+        signal = Signal.CONTINUE
+        while signal != Signal.STOP:
+            if n_points < self.__params.build_up:
+                event = self.__add()
+                self.__push(event)
+                n_points += 1
+            else:
+                event_type = randint(-1, 1) if self.__points else 1
+                event = self.__according_to[event_type]()
+                self.__push(event)
+            try:
+                item_from_queue = self.__control_queue.get_nowait()
+                signal = self.__signal_type_checked(item_from_queue)
+            except Empty:
+                signal = Signal.CONTINUE
+            except OSError:
+                raise OSError('Control queue is already closed. Instantiate'
+                              ' a new <Parallel> object to get going again!')
 
     def __add(self) -> Event:
         location = self.__new_location()
@@ -136,4 +144,10 @@ class MockProducer(Process):
     def __queue_type_checked(value: QUEUE) -> QUEUE:
         if not type(value) is QUEUE:
             raise TypeError('Event queue must be a multiprocessing Queue!')
+        return value
+
+    @staticmethod
+    def __signal_type_checked(value: Signal) -> Signal:
+        if not type(value) is Signal:
+            raise TypeError('Signal must be of type <Signal>!')
         return value

@@ -10,14 +10,14 @@ class Smoother(Process):
     def __init__(self, params: SmootherParams) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
-        self.__control = Signal.CONTINUE
         self.__init = frombuffer(self.__params.smooth_coeffs.get_obj()).copy()
         self.__shape = self.__init.shape
 
     def run(self) -> None:
         raw_coeffs = self.__init.copy()
         smooth_coeffs = self.__init.copy()
-        while self.__control != Signal.STOP:
+        signal = Signal.CONTINUE
+        while signal != Signal.STOP:
             start_time = perf_counter()
             try:
                 item_from_queue = self.__params.coeff_queue.get_nowait()
@@ -33,9 +33,10 @@ class Smoother(Process):
             with self.__params.smooth_coeffs.get_lock():
                 self.__params.smooth_coeffs.get_obj()[:] = smooth_coeffs
             try:
-                self.__control = self.__params.control_queue.get_nowait()
+                item_from_queue = self.__params.control_queue.get_nowait()
+                signal = self.__signal_type_checked(item_from_queue)
             except Empty:
-                self.__control = Signal.CONTINUE
+                signal = Signal.CONTINUE
             except OSError:
                 raise OSError('Control queue is already closed. Instantiate'
                               ' a new <Parallel> object to get going again!')
@@ -51,4 +52,10 @@ class Smoother(Process):
             raise TypeError('Coefficients must be numpy array!')
         if value.shape != self.__shape:
             raise ValueError('Read-in coefficient array has wrong shape!')
+        return value
+
+    @staticmethod
+    def __signal_type_checked(value: Signal) -> Signal:
+        if not type(value) is Signal:
+            raise TypeError('Signal must be of type <Signal>!')
         return value

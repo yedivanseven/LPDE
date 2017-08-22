@@ -1,5 +1,6 @@
 from multiprocessing import Process, Value
 from queue import Empty
+from numpy import ndarray
 from numpy.polynomial.legendre import legvander2d
 from pandas import DataFrame
 from .transformerparams import TransformerParams
@@ -17,10 +18,10 @@ class Transformer(Process):
         self.__handler_of = {Action.ADD: self.__add,
                              Action.MOVE: self.__move,
                              Action.DELETE: self.__delete}
-        self.__control = Signal.CONTINUE
 
     def run(self) -> None:
-        while self.__control != Signal.STOP:
+        signal = Signal.CONTINUE
+        while signal != Signal.STOP:
             try:
                 item_from_queue = self.__params.event_queue.get_nowait()
                 event = self.__event_type_checked(item_from_queue)
@@ -32,16 +33,12 @@ class Transformer(Process):
             else:
                 data_changed_due_to = self.__handler_of[event.action]
                 if data_changed_due_to(event):
-                    try:
-                        self.__params.phi_queue.put(self.__phi_ijn.values)
-                    except AssertionError:
-                        err_msg = ('Phi queue is already closed. Instantiate a'
-                                   ' new <Parallel> object to start all over!')
-                        raise AssertionError(err_msg)
+                    self.__push(self.__phi_ijn.values)
             try:
-                self.__control = self.__params.control_queue.get_nowait()
+                item_from_queue = self.__params.control_queue.get_nowait()
+                signal = self.__signal_type_checked(item_from_queue)
             except Empty:
-                self.__control = Signal.CONTINUE
+                signal = Signal.CONTINUE
             except OSError:
                 raise OSError('Control queue is already closed. Instantiate'
                               ' a new <Parallel> object to get going again!')
@@ -68,9 +65,17 @@ class Transformer(Process):
         if event.id in self.__phi_ijn.columns:
             self.__phi_ijn.drop(event.id, axis=1, inplace=True)
             with self.__N.get_lock():
-                self.__N -= 1
+                self.__N.value -= 1
             return True
         return False
+
+    def __push(self, array: ndarray) -> None:
+        try:
+            self.__params.phi_queue.put(array)
+        except AssertionError:
+            err_msg = ('Phi queue is already closed. Instantiate a'
+                       ' new <Parallel> object to start all over!')
+            raise AssertionError(err_msg)
 
     @property
     def N(self) -> int:
@@ -86,4 +91,10 @@ class Transformer(Process):
     def __event_type_checked(value: Event) -> Event:
         if not type(value) is Event:
             raise TypeError('Event must be of type <Event>!')
+        return value
+
+    @staticmethod
+    def __signal_type_checked(value: Signal) -> Signal:
+        if not type(value) is Signal:
+            raise TypeError('Signal must be of type <Signal>!')
         return value
