@@ -1,4 +1,5 @@
 from multiprocessing import Process, Queue, Array
+from multiprocessing import Event as Stop
 from time import sleep
 from numpy import float64
 from ..datatypes import Degree, Coefficients, Signal
@@ -22,6 +23,7 @@ class Controller:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
         self.__producer_params = self.__params_type_checked(producer_params)
+        self.__stop_producer = Stop()
         self.__control_queue = Queue()
         self.__event_queue = Queue()
         self.__phi_queue = Queue()
@@ -33,7 +35,6 @@ class Controller:
         self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
         self.__transformer_params = TransformerParams(self.__degree,
                                                       self.__mapper,
-                                                      self.__control_queue,
                                                       self.__event_queue,
                                                       self.__phi_queue)
         self.__minimizer_params = MinimizerParams(self.__degree,
@@ -104,7 +105,7 @@ class Controller:
         return self.__transformer.N if self.__has('transformer') else 0
 
     @property
-    def coefficients(self) -> ARRAY:
+    def smooth_coeffs(self) -> ARRAY:
         return self.__smooth_coeffs
 
     def start(self, n_jobs: int =1, decay: float =1.0) -> None:
@@ -120,8 +121,8 @@ class Controller:
         if not self.__has('producer'):
             self.__producer = MockProducer(self.__producer_params,
                                            self.__mapper.bounds,
-                                           self.__control_queue,
-                                           self.__event_queue)
+                                           self.__event_queue,
+                                           self.__stop_producer)
             self.__producer.start()
 
     def __start_transformer(self) -> None:
@@ -146,11 +147,18 @@ class Controller:
 
     def stop(self) -> None:
         self.__stop_processes()
-        self.__close_queues()
+        #self.__close_queues()
 
     def __stop_processes(self) -> None:
+        self.__stop_producer.set()
+        while not all(queue.empty() for queue in self.__queues):
+            print([queue.empty() for queue in self.__queues])
+            print([queue.qsize() for queue in self.__queues])
+            sleep(1)
+            print('after')
+        print([queue.empty() for queue in self.__queues])
+        print([queue.qsize() for queue in self.__queues])
         try:
-            self.__control_queue.put(Signal.STOP)
             self.__control_queue.put(Signal.STOP)
             for _ in self.__minimizers:
                 self.__control_queue.put(Signal.STOP)

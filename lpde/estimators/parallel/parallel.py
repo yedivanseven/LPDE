@@ -15,7 +15,7 @@ class ParallelEstimator:
         self.__controller = Controller(self.__degree, self.__map, params)
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
-        self.__c.vec = frombuffer(self.__controller.coefficients.get_obj())
+        self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
 
     @property
     def controller(self) -> Controller:

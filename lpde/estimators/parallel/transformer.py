@@ -1,5 +1,4 @@
 from multiprocessing import Process, Value
-from queue import Empty
 from numpy import ndarray
 from numpy.polynomial.legendre import legvander2d
 from pandas import DataFrame
@@ -23,25 +22,18 @@ class Transformer(Process):
         signal = Signal.CONTINUE
         while signal != Signal.STOP:
             try:
-                item_from_queue = self.__params.event_queue.get_nowait()
+                item_from_queue = self.__params.event_queue.get()
                 event = self.__event_type_checked(item_from_queue)
-            except Empty:
-                pass
             except OSError:
                 raise OSError('Event queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
+            except ValueError:
+                signal = Signal.STOP
             else:
                 data_changed_due_to = self.__handler_of[event.action]
                 if data_changed_due_to(event):
                     self.__push(self.__phi_ijn.values)
-            try:
-                item_from_queue = self.__params.control_queue.get_nowait()
-                signal = self.__signal_type_checked(item_from_queue)
-            except Empty:
-                signal = Signal.CONTINUE
-            except OSError:
-                raise OSError('Control queue is already closed. Instantiate'
-                              ' a new <Parallel> object to get going again!')
+        self.__write_stop_signal_to_queue()
 
     def __add(self, event: Event) -> bool:
         if event.id not in self.__phi_ijn.columns:
@@ -77,6 +69,14 @@ class Transformer(Process):
                        ' new <Parallel> object to start all over!')
             raise AssertionError(err_msg)
 
+    def __write_stop_signal_to_queue(self) -> None:
+        try:
+            self.__params.phi_queue.put(Signal.STOP)
+        except AssertionError:
+            err_msg = ('Phi queue is already closed. Instantiate a'
+                       ' new <Parallel> object to start all over!')
+            raise AssertionError(err_msg)
+
     @property
     def N(self) -> int:
         return self.__N.value
@@ -89,6 +89,8 @@ class Transformer(Process):
 
     @staticmethod
     def __event_type_checked(value: Event) -> Event:
+        if type(value) is Signal and value == Signal.STOP:
+            raise ValueError
         if not type(value) is Event:
             raise TypeError('Event must be of type <Event>!')
         return value

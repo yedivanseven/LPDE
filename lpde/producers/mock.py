@@ -1,13 +1,14 @@
 from time import sleep
 from random import randint, expovariate, sample
 from uuid import uuid4
-from queue import Empty
 from multiprocessing import Process, Queue
+from multiprocessing import Event as Stop
 from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
-from ..estimators.datatypes import Action, Event, Signal
+from ..estimators.datatypes import Action, Signal, Event
 
 QUEUE = type(Queue())
+STOP = type(Stop())
 
 
 class MockParams:
@@ -64,11 +65,12 @@ class MockParams:
 
 class MockProducer(Process):
     def __init__(self, params: MockParams, bounds: BoundingBox,
-                 control_queue: QUEUE, event_queue: QUEUE) -> None:
+                 event_queue: QUEUE, stop: STOP) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__bounds = self.__bounds_type_checked(bounds)
-        self.__control_queue = self.__queue_type_checked(control_queue)
+        self.__stop = self.__stop_type_checked(stop)
+        self.__stop.clear()
         self.__event_queue = self.__queue_type_checked(event_queue)
         self.__points = {}
         self.__according_to = {1: self.__add,
@@ -77,8 +79,7 @@ class MockProducer(Process):
 
     def run(self) -> None:
         n_points = 0
-        signal = Signal.CONTINUE
-        while signal != Signal.STOP:
+        while not self.__stop.is_set():
             if n_points < self.__params.build_up:
                 event = self.__add()
                 self.__push(event)
@@ -87,14 +88,7 @@ class MockProducer(Process):
                 event_type = randint(-1, 1) if self.__points else 1
                 event = self.__according_to[event_type]()
                 self.__push(event)
-            try:
-                item_from_queue = self.__control_queue.get_nowait()
-                signal = self.__signal_type_checked(item_from_queue)
-            except Empty:
-                signal = Signal.CONTINUE
-            except OSError:
-                raise OSError('Control queue is already closed. Instantiate'
-                              ' a new <Parallel> object to get going again!')
+        self.__write_stop_signal_to_queue()
 
     def __add(self) -> Event:
         location = self.__new_location()
@@ -128,6 +122,14 @@ class MockProducer(Process):
             raise ValueError('Distribution returned point out of bounds!')
         return location
 
+    def __write_stop_signal_to_queue(self) -> None:
+        try:
+            self.__event_queue.put(Signal.STOP)
+        except AssertionError:
+            err_msg = ('Event queue is already closed. Instantiate'
+                       ' a new <Parallel> object to get going again!')
+            raise AssertionError(err_msg)
+
     @staticmethod
     def __params_type_checked(value: MockParams) -> MockParams:
         if not type(value) is MockParams:
@@ -141,13 +143,13 @@ class MockProducer(Process):
         return value
 
     @staticmethod
-    def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if not type(value) is QUEUE:
-            raise TypeError('Event queue must be a multiprocessing Queue!')
+    def __stop_type_checked(value: STOP) -> STOP:
+        if not type(value) is STOP:
+            raise TypeError('The stop flag mus tbe a multiprocessing Event!')
         return value
 
     @staticmethod
-    def __signal_type_checked(value: Signal) -> Signal:
-        if not type(value) is Signal:
-            raise TypeError('Signal must be of type <Signal>!')
+    def __queue_type_checked(value: QUEUE) -> QUEUE:
+        if not type(value) is QUEUE:
+            raise TypeError('Event queue must be a multiprocessing Queue!')
         return value

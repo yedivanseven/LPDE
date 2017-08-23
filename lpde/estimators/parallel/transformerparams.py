@@ -6,11 +6,10 @@ QUEUE = type(Queue())
 
 
 class TransformerParams:
-    def __init__(self, degree: Degree, mapper: Mapper, control_queue: QUEUE,
+    def __init__(self, degree: Degree, mapper: Mapper,
                  event_queue: QUEUE, phi_queue: QUEUE) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
-        self.__control_queue = self.__queue_type_checked(control_queue)
         self.__event_queue = self.__queue_type_checked(event_queue)
         self.__phi_queue = self.__queue_type_checked(phi_queue)
 
@@ -21,10 +20,6 @@ class TransformerParams:
     @property
     def map(self) -> Mapper:
         return self.__map
-
-    @property
-    def control_queue(self) -> QUEUE:
-        return self.__control_queue
 
     @property
     def event_queue(self) -> QUEUE:
