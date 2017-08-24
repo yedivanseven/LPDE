@@ -1,12 +1,62 @@
-from multiprocessing import Process
+from multiprocessing import Process, Queue
+from multiprocessing import Event as StopFlag
 from queue import Empty
 from numpy import zeros, square, log, ndarray, float64, array
 from scipy.optimize import fmin_l_bfgs_b, minimize
-from ..datatypes import InitialCoefficients, Signal
-from .minimizerparams import MinimizerParams
+from ..datatypes import InitialCoefficients, Degree
 
+QUEUE = type(Queue())
+STOP_FLAG = type(StopFlag())
 GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
+TIMEOUT = 1
+
+
+class MinimizerParams:
+    def __init__(self, degree: Degree, phi_queue: QUEUE,
+                 coeff_queue: QUEUE, stop_flag: STOP_FLAG) -> None:
+        self.__degree = self.__degree_type_checked(degree)
+        self.__phi_queue = self.__queue_type_checked(phi_queue)
+        self.__coeff_queue = self.__queue_type_checked(coeff_queue)
+        self.__stop_flag = self.__stop_type_checked(stop_flag)
+
+    @property
+    def degree(self):
+        return self.__degree
+
+    @property
+    def phi_queue(self):
+        return self.__phi_queue
+
+    @property
+    def coeff_queue(self):
+        return self.__coeff_queue
+
+    @property
+    def stop_flag(self) -> STOP_FLAG:
+        return self.__stop_flag
+
+    @staticmethod
+    def __degree_type_checked(value: Degree) -> Degree:
+        if not type(value) is Degree:
+            raise TypeError('Polynomial degree must be of type <Degree>!')
+        return value
+
+    @staticmethod
+    def __queue_type_checked(value: QUEUE) -> QUEUE:
+        if not type(value) is QUEUE:
+            raise TypeError('Coeff and phi must be multiprocessing Queues!')
+        if value._closed:
+            raise OSError('Coeff- and phi-queues must initially be open!')
+        return value
+
+    @staticmethod
+    def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
+        if not type(value) is STOP_FLAG:
+            raise TypeError('The stop flag must be a multiprocessing Event!')
+        if value.is_set():
+            raise ValueError('Stop flag must not be set on instantiation!')
+        return value
 
 
 class Minimizer(Process):
@@ -23,26 +73,18 @@ class Minimizer(Process):
                              'jac': self.__grad_norm}
 
     def run(self) -> None:
-        signal = Signal.CONTINUE
-        while signal != Signal.STOP:
+        while True:
             try:
-                item_from_queue = self.__params.phi_queue.get_nowait()
+                item_from_queue = self.__params.phi_queue.get(timeout=TIMEOUT)
                 self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
-            except Empty:
-                pass
             except OSError:
                 raise OSError('Phi queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
+            except Empty:
+                if self.__params.stop_flag.is_set():
+                    break
             else:
                 self.__minimize()
-            try:
-                item_from_queue = self.__params.control_queue.get_nowait()
-                signal = self.__signal_type_checked(item_from_queue)
-            except Empty:
-                signal = Signal.CONTINUE
-            except OSError:
-                raise OSError('Control queue is already closed. Instantiate'
-                              ' a new <Parallel> object to get going again!')
 
     def __minimize(self) -> None:
         self.__c_init.lagrange = self.__phi_ijn.shape[1]
@@ -109,10 +151,4 @@ class Minimizer(Process):
         if value.size == 0:
             self.__push(self.__c_init.coeffs)
             raise Empty('Currently, there are no data points to process.')
-        return value
-
-    @staticmethod
-    def __signal_type_checked(value: Signal) -> Signal:
-        if not type(value) is Signal:
-            raise TypeError('Signal must be of type <Signal>!')
         return value

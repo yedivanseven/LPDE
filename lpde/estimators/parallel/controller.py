@@ -1,52 +1,44 @@
 from multiprocessing import Process, Queue, Array
-from multiprocessing import Event as Stop
-from time import sleep
+from multiprocessing import Event as StopFlag
 from numpy import float64
-from ..datatypes import Degree, Coefficients, Signal
+from .transformer import TransformerParams, Transformer
+from .minimizer import MinimizerParams, Minimizer
+from .smoother import SmootherParams, Smoother
+from ..datatypes import Degree, Coefficients
 from ...geometry import Mapper
-from .smootherparams import SmootherParams
-from .smoother import Smoother
-from .minimizerparams import MinimizerParams
-from .minimizer import Minimizer
-from .transformerparams import TransformerParams
-from .transformer import Transformer
-from ...producers import MockParams, MockProducer
+from ...producers import MockProducer, PRODUCER_TYPES
 
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
-QUEUE_CLOSE_TIMEOUT = 1e-6
 
 
 class Controller:
-    def __init__(self, degree: Degree, mapper: Mapper,
-                 producer_params: MockParams) -> None:
+    def __init__(self, degree: Degree, mapper: Mapper, produce_params) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
-        self.__producer_params = self.__params_type_checked(producer_params)
-        self.__stop_producer = Stop()
-        self.__control_queue = Queue()
+        self.__produce_params = self.__params_type_checked(produce_params)
+        self.__stop_flag = StopFlag()
         self.__event_queue = Queue()
         self.__phi_queue = Queue()
         self.__coeff_queue = Queue()
-        self.__queues = (self.__control_queue,
-                         self.__event_queue,
+        self.__queues = (self.__event_queue,
                          self.__phi_queue,
                          self.__coeff_queue)
         self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
         self.__transformer_params = TransformerParams(self.__degree,
                                                       self.__mapper,
                                                       self.__event_queue,
-                                                      self.__phi_queue)
+                                                      self.__phi_queue,
+                                                      self.__stop_flag)
         self.__minimizer_params = MinimizerParams(self.__degree,
-                                                  self.__control_queue,
                                                   self.__phi_queue,
-                                                  self.__coeff_queue)
+                                                  self.__coeff_queue,
+                                                  self.__stop_flag)
+        self.__smoother_params = SmootherParams(self.__coeff_queue,
+                                                self.__smooth_coeffs,
+                                                self.__stop_flag)
         self.__minimizers = []
         self.__class_prefix = '_' + self.__class__.__name__ + '__'
-
-    @property
-    def control_queue(self) -> QUEUE:
-        return self.__control_queue
 
     @property
     def event_queue(self) -> QUEUE:
@@ -119,10 +111,10 @@ class Controller:
 
     def __start_producer(self) -> None:
         if not self.__has('producer'):
-            self.__producer = MockProducer(self.__producer_params,
+            self.__producer = MockProducer(self.__produce_params,
                                            self.__mapper.bounds,
                                            self.__event_queue,
-                                           self.__stop_producer)
+                                           self.__stop_flag)
             self.__producer.start()
 
     def __start_transformer(self) -> None:
@@ -140,44 +132,27 @@ class Controller:
     def __start_smoother(self, decay: float =1.0) -> None:
         decay = self.__float_type_and_range_checked(decay)
         if not self.__has('smoother'):
-            params = SmootherParams(self.__control_queue, self.__coeff_queue,
-                                    self.__smooth_coeffs, decay)
-            self.__smoother = Smoother(params)
+            self.__smoother = Smoother(self.__smoother_params, decay)
             self.__smoother.start()
 
     def stop(self) -> None:
         self.__stop_processes()
-        #self.__close_queues()
+        self.__close_queues()
 
     def __stop_processes(self) -> None:
-        self.__stop_producer.set()
-        while not all(queue.empty() for queue in self.__queues):
-            print([queue.empty() for queue in self.__queues])
-            print([queue.qsize() for queue in self.__queues])
-            sleep(1)
-            print('after')
-        print([queue.empty() for queue in self.__queues])
-        print([queue.qsize() for queue in self.__queues])
-        try:
-            self.__control_queue.put(Signal.STOP)
-            for _ in self.__minimizers:
-                self.__control_queue.put(Signal.STOP)
-            self.__control_queue.put(Signal.STOP)
-        except AssertionError:
-            pass
-#        if self.__has('producer'):
-#            self.__producer.join()
-#        if self.__has('transformer'):
-#            self.__transformer.join()
-#        for minimizer in self.__minimizers:
-#            minimizer.join()
-#        if self.__has('smoother'):
-#            self.__smoother.join()
+        self.__stop_flag.set()
+        if self.__has('producer'):
+            self.__producer.join()
+        if self.__has('transformer'):
+            self.__transformer.join()
+        for minimizer in self.__minimizers:
+            minimizer.join()
+        if self.__has('smoother'):
+            self.__smoother.join()
 
     def __close_queues(self) -> None:
         for queue in self.__queues:
             queue.close()
-            sleep(QUEUE_CLOSE_TIMEOUT)
             queue.join_thread()
 
     @staticmethod
@@ -193,11 +168,18 @@ class Controller:
         return value
 
     @staticmethod
+    def __params_type_checked(value):
+        if not type(value) in PRODUCER_TYPES:
+            err_msg = 'Type of producer parameters must be in PRODUCER_TYPES!'
+            raise TypeError(err_msg)
+        return value
+
+    @staticmethod
     def __integer_type_and_range_checked(value: int) -> int:
         if not type(value) is int:
-            raise TypeError('Number of processes must be an integer!')
+            raise TypeError('Number of worker processes must be an integer!')
         if value < 1:
-            raise ValueError('Number of processes must be at least 1!')
+            raise ValueError('Number of worker processes must be at least 1!')
         return value
 
     @staticmethod
@@ -205,16 +187,8 @@ class Controller:
         if not type(value) in (int, float, float64):
             raise TypeError('Decay constant must be a number!')
         if value <= 0:
-            raise ValueError('Decay constant must be positive !')
-        return value
-
-    @staticmethod
-    def __params_type_checked(value: MockParams) -> MockParams:
-        if not type(value) is MockParams:
-            err_msg = 'Producer parameter must be of type <ProducerParams>!'
-            raise TypeError(err_msg)
+            raise ValueError('Decay constant must be positive > 0!')
         return value
 
     def __has(self, attribute):
         return hasattr(self, self.__class_prefix + attribute)
-
