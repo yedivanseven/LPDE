@@ -7,7 +7,7 @@ from time import perf_counter
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
 STOP_FLAG = type(StopFlag())
-STOP = 1
+STOP = 1  # Queue get-timeout in seconds for process termination.
 
 
 class SmootherParams():
