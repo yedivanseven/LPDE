@@ -31,7 +31,7 @@ class MockParams:
 
     @staticmethod
     def __float_type_and_range_checked(value: float) -> float:
-        if not type(value) in (int, float, float64):
+        if type(value) not in (int, float, float64):
             raise TypeError('Rate parameter must be a number!')
         if value <= 0.0:
             raise ValueError('Rate parameter must be positive!')
@@ -39,7 +39,7 @@ class MockParams:
 
     @staticmethod
     def __integer_type_and_range_checked(value) -> int:
-        if not type(value) is int:
+        if type(value) is not int:
             raise TypeError('Build-up and number of events must be integers!')
         if value <= 0:
             raise ValueError('Build-up and number of events must be positive!')
@@ -56,7 +56,7 @@ class MockParams:
             return_value = value(bounds)
         except:
             raise RuntimeError('Call to distribution function failed!')
-        if not type(return_value) is PointAt:
+        if type(return_value) is not PointAt:
             raise TypeError('Return value of distribution must be <PointAt>!')
         if not bounds.contain(return_value):
             raise ValueError('Returned point lies outside bounding box!')
@@ -122,19 +122,19 @@ class MockProducer(Process):
 
     @staticmethod
     def __params_type_checked(value: MockParams) -> MockParams:
-        if not type(value) is MockParams:
+        if type(value) is not MockParams:
             raise TypeError('Parameters must be of type <MockParams>!')
         return value
 
     @staticmethod
     def __bounds_type_checked(value: BoundingBox) -> BoundingBox:
-        if not type(value) is BoundingBox:
+        if type(value) is not BoundingBox:
             raise TypeError('Bounds must be of type <BoundingBox>!')
         return value
 
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if not type(value) is QUEUE:
+        if type(value) is not QUEUE:
             raise TypeError('Event queue must be a multiprocessing Queue!')
         if value._closed:
             raise OSError('Event queue must be open on instantiation!')
@@ -142,7 +142,7 @@ class MockProducer(Process):
 
     @staticmethod
     def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if not type(value) is STOP_FLAG:
+        if type(value) is not STOP_FLAG:
             raise TypeError('The stop flag must be a multiprocessing Event!')
         if value.is_set():
             raise ValueError('Stop flag must not be set on instantiation!')

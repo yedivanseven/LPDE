@@ -49,36 +49,36 @@ class ParallelEstimator:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     @staticmethod
     def __mapper_type_checked(value: Mapper) -> Mapper:
-        if not type(value) is Mapper:
+        if type(value) is not Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
         return value
 
     @staticmethod
     def __producer_params_type_checked(value: MockParams) -> MockParams:
-        if not type(value) is MockParams:
+        if type(value) is not MockParams:
             raise TypeError('Type of parameters must be <ProducerParams>!')
         return value
 
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:
-        if not type(value) is PointAt:
+        if type(value) is not PointAt:
             raise TypeError('Point must be of type <PointAt>!')
         return value
 
     @staticmethod
     def __event_type_checked(value: Event) -> Event:
-        if not type(value) is Event:
+        if type(value) is not Event:
             raise TypeError('Event must be of type <Event>!')
         return value
 
     @staticmethod
     def __grid_type_checked(value: Grid) -> Grid:
-        if not type(value) is Grid:
+        if type(value) is not Grid:
             raise TypeError('Grid must be of type <Grid>!')
         return value

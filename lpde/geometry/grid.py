@@ -15,7 +15,7 @@ class Grid:
 
     @staticmethod
     def __integer_type_and_range_checked(value: int) -> int:
-        if not type(value) is int:
+        if type(value) is not int:
             raise TypeError('Number of grid points must be an integer!')
         if value < 1:
             raise ValueError('Number of grid points must be positive!')

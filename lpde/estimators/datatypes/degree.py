@@ -14,7 +14,7 @@ class Degree(DegreeBase):
 
     @staticmethod
     def __type_and_range_checked(value: int) -> int:
-        if not type(value) is int:
+        if type(value) is not int:
             raise TypeError('Maximum polynomial degree must be an integer!')
         if value < 0:
             raise ValueError('Maximum polynomial degree must not be negative!')

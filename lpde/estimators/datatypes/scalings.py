@@ -20,7 +20,7 @@ class Scalings:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 

@@ -3,7 +3,7 @@ from numpy.polynomial.legendre import legvander2d, legval2d
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from pandas import DataFrame
 from ...geometry import Mapper, PointAt, Grid
-from ..datatypes import Coefficients, InitialCoefficients
+from ..datatypes import Coefficients, LagrangeCoefficients
 from ..datatypes import Scalings, Event, Degree, Action
 
 GRADIENT_TOLERANCE = 0.1
@@ -14,7 +14,7 @@ class SerialEstimator:
     def __init__(self, degree: Degree, mapper: Mapper) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
-        self.__c_init = InitialCoefficients(self.__degree)
+        self.__c_init = LagrangeCoefficients(self.__degree)
         self.__c = Coefficients(self.__degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__scale = Scalings(self.__degree)
@@ -130,30 +130,30 @@ class SerialEstimator:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     @staticmethod
     def __mapper_type_checked(value: Mapper) -> Mapper:
-        if not type(value) is Mapper:
+        if type(value) is not Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
         return value
 
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:
-        if not type(value) is PointAt:
+        if type(value) is not PointAt:
             raise TypeError('Point must be of type <PointAt>!')
         return value
 
     @staticmethod
     def __event_type_checked(value: Event) -> Event:
-        if not type(value) is Event:
+        if type(value) is not Event:
             raise TypeError('Event must be of type <Event>!')
         return value
 
     @staticmethod
     def __grid_type_checked(value: Grid) -> Grid:
-        if not type(value) is Grid:
+        if type(value) is not Grid:
             raise TypeError('Grid must be of type <Grid>!')
         return value

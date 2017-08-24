@@ -3,7 +3,7 @@ from ...geometry import PointAt, BoundingBox
 
 
 def bbox_type_checked(value) -> BoundingBox:
-    if not type(value) is BoundingBox:
+    if type(value) is not BoundingBox:
         raise TypeError('Bounds must be of type <BoundingBox>!')
     return value
 

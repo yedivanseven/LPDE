@@ -37,13 +37,13 @@ class BoundingBox:
 
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:
-        if not type(value) is PointAt:
+        if type(value) is not PointAt:
             raise TypeError('Center must be of type <PointAt>!')
         return value
 
     @staticmethod
     def __window_type_checked(value: Window) -> Window:
-        if not type(value) is Window:
+        if type(value) is not Window:
             raise TypeError('Window must be of type <Window>!')
         return value
 

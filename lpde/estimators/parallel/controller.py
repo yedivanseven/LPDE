@@ -77,16 +77,38 @@ class Controller:
         raise AttributeError('Smoother process not started yet!')
 
     @property
-    def are_alive(self) -> dict:
-        alive = {'producer': False, 'transformer': False, 'smoother': False}
+    def alive(self) -> dict:
+        living = {'producer': False, 'transformer': False, 'smoother': False}
         if self.__has('producer') and self.__producer.is_alive():
-            alive['producer'] = True
+            living['producer'] = True
         if self.__has('transformer') and self.__transformer.is_alive():
-            alive['transformer'] = True
+            living['transformer'] = True
         if self.__has('smoother') and self.__smoother.is_alive():
-            alive['smoother'] = True
-        alive['minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
-        return alive
+            living['smoother'] = True
+        living['minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
+        return living
+
+    @property
+    def open(self) -> dict:
+        not_closed = {'events': False, 'phi': False, 'coefficients': False}
+        if not self.__event_queue._closed:
+            not_closed['events'] = True
+        if not self.__phi_queue._closed:
+            not_closed['phi'] = True
+        if not self.__coeff_queue._closed:
+            not_closed['coefficients'] = True
+        return not_closed
+
+    @property
+    def qsize(self) -> dict:
+        qsizes = {'events': None, 'phi': None, 'coefficients': None}
+        if not self.__event_queue._closed:
+            qsizes['events'] = self.__event_queue.qsize()
+        if not self.__phi_queue._closed:
+            qsizes['phi'] = self.__phi_queue.qsize()
+        if not self.__coeff_queue._closed:
+            qsizes['coefficients'] = self.__coeff_queue.qsize()
+        return qsizes
 
     @property
     def n_jobs(self) -> int:
@@ -141,13 +163,14 @@ class Controller:
 
     def __stop_processes(self) -> None:
         self.__stop_flag.set()
-        if self.__has('producer'):
+        if self.__has('producer') and self.__producer.is_alive():
             self.__producer.join()
-        if self.__has('transformer'):
+        if self.__has('transformer') and self.__transformer.is_alive():
             self.__transformer.join()
         for minimizer in self.__minimizers:
-            minimizer.join()
-        if self.__has('smoother'):
+            if minimizer.is_alive():
+                minimizer.join()
+        if self.__has('smoother') and self.__smoother.is_alive():
             self.__smoother.join()
 
     def __close_queues(self) -> None:
@@ -157,26 +180,26 @@ class Controller:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     @staticmethod
     def __mapper_type_checked(value: Mapper) -> Mapper:
-        if not type(value) is Mapper:
+        if type(value) is not Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
         return value
 
     @staticmethod
     def __params_type_checked(value):
-        if not type(value) in PRODUCER_TYPES:
+        if type(value) not in PRODUCER_TYPES:
             err_msg = 'Type of producer parameters must be in PRODUCER_TYPES!'
             raise TypeError(err_msg)
         return value
 
     @staticmethod
     def __integer_type_and_range_checked(value: int) -> int:
-        if not type(value) is int:
+        if type(value) is not int:
             raise TypeError('Number of worker processes must be an integer!')
         if value < 1:
             raise ValueError('Number of worker processes must be at least 1!')
@@ -184,7 +207,7 @@ class Controller:
 
     @staticmethod
     def __float_type_and_range_checked(value: float) -> float:
-        if not type(value) in (int, float, float64):
+        if type(value) not in (int, float, float64):
             raise TypeError('Decay constant must be a number!')
         if value <= 0:
             raise ValueError('Decay constant must be positive > 0!')

@@ -24,12 +24,12 @@ class Coefficients:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     def __vector_type_and_dim_checked(self, value: ndarray) -> ndarray:
-        if not type(value) is ndarray:
+        if type(value) is not ndarray:
             raise TypeError('Coefficient vector must be a numpy array!')
         if len(value.shape) != 1:
             raise ValueError('Coefficient vector must be 1-dimensional!')

@@ -7,7 +7,7 @@ from time import perf_counter
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
 STOP_FLAG = type(StopFlag())
-STOP = 1  # Queue get-timeout in seconds for process termination.
+STOP = 1  # Queue-get timeout in seconds for process termination.
 
 
 class SmootherParams():
@@ -31,21 +31,21 @@ class SmootherParams():
 
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if not type(value) is QUEUE:
-            raise TypeError('Coeff_queue must be a multiprocessing Queue!')
+        if type(value) is not QUEUE:
+            raise TypeError('Coeff. queue must be a multiprocessing Queue!')
         if value._closed:
             raise OSError('Coefficient queue mut be open on instantiation!')
         return value
 
     @staticmethod
     def __array_type_checked(value: ARRAY) -> ARRAY:
-        if not type(value) is ARRAY:
+        if type(value) is not ARRAY:
             raise TypeError('Smooth coefficients must be a shared Array!')
         return value
 
     @staticmethod
     def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if not type(value) is STOP_FLAG:
+        if type(value) is not STOP_FLAG:
             raise TypeError('The stop flag must be a multiprocessing Event!')
         if value.is_set():
             raise ValueError('Stop flag must not be set on instantiation!')
@@ -89,15 +89,16 @@ class Smoother(Process):
 
     @staticmethod
     def __float_type_and_range_checked(value: float) -> float:
-        if not type(value) in (int, float, float64):
+        if type(value) not in (int, float, float64):
             raise TypeError('Decay constant must be a number!')
         if value <= 0:
             raise ValueError('Decay constant must be positive !')
         return value
 
     def __type_and_shape_checked(self, value: ndarray) -> ndarray:
-        if not type(value) is ndarray:
+        if type(value) is not ndarray:
             raise TypeError('Coefficients must be numpy array!')
         if value.shape != self.__shape:
-            raise ValueError('Read-in coefficient array has wrong shape!')
+            raise ValueError('Read coefficient array with wrong shape! Should'
+                             f' be {self.__shape}, but is now {value.shape}.')
         return value

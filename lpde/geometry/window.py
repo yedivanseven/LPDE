@@ -12,12 +12,12 @@ class Window:
         return self.__dimensions
 
     @staticmethod
-    def __type_and_range_checked(value: float) -> float64:
+    def __type_and_range_checked(value: float) -> float:
         if type(value) not in (int, float, float64):
             raise TypeError('Width and height must be numbers!')
         if not value > 0:
             raise ValueError('Width and height must be > 0!')
-        return float64(value)
+        return float(value)
 
 
 if __name__ == '__main__':

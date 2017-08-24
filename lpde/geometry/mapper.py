@@ -31,18 +31,18 @@ class Mapper:
 
     @staticmethod
     def __box_type_checked(value: BoundingBox) -> BoundingBox:
-        if not type(value) is BoundingBox:
+        if type(value) is not BoundingBox:
             raise TypeError('Bounds must be of type <BoundingBox>!')
         return value
 
     @staticmethod
     def __width_type_checked(value: WidthOf) -> WidthOf:
-        if not type(value) is WidthOf:
+        if type(value) is not WidthOf:
             raise TypeError('Support must be of type <WidthOf>!')
         return value
 
     def __point_type_and_range_checked(self, value: PointAt) -> PointAt:
-        if not type(value) is PointAt:
+        if type(value) is not PointAt:
             raise TypeError('Point must be of type <PointAt>!')
         if not self.__bounds.contain(value):
             raise ValueError('Point lies outside bounding box!')

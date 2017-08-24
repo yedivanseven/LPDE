@@ -43,19 +43,19 @@ class TransformerParams:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     @staticmethod
     def __mapper_type_checked(value: Mapper) -> Mapper:
-        if not type(value) is Mapper:
+        if type(value) is not Mapper:
             raise TypeError('Type of mapper must be <Mapper>!')
         return value
 
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if not type(value) is QUEUE:
+        if type(value) is not QUEUE:
             raise TypeError('Event and phi must be multiprocessing Queues!')
         if value._closed:
             raise OSError('Event- and phi-queues must initially be open!')
@@ -63,7 +63,7 @@ class TransformerParams:
 
     @staticmethod
     def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if not type(value) is STOP_FLAG:
+        if type(value) is not STOP_FLAG:
             raise TypeError('The stop flag must be a multiprocessing Event!')
         if value.is_set():
             raise ValueError('Stop flag must not be set on instantiation!')
@@ -139,12 +139,12 @@ class Transformer(Process):
 
     @staticmethod
     def __params_type_checked(value: TransformerParams) -> TransformerParams:
-        if not type(value) is TransformerParams:
+        if type(value) is not TransformerParams:
             raise TypeError('Parameters must be of type <TransformerParams>!')
         return value
 
     @staticmethod
     def __event_type_checked(value: Event) -> Event:
-        if not type(value) is Event:
+        if type(value) is not Event:
             raise TypeError('Event must be of type <Event>!')
         return value

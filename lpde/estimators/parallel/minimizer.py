@@ -3,7 +3,7 @@ from multiprocessing import Event as StopFlag
 from queue import Empty
 from numpy import zeros, square, log, ndarray, float64, array
 from scipy.optimize import fmin_l_bfgs_b, minimize
-from ..datatypes import InitialCoefficients, Degree
+from ..datatypes import LagrangeCoefficients, Degree
 
 QUEUE = type(Queue())
 STOP_FLAG = type(StopFlag())
@@ -38,13 +38,13 @@ class MinimizerParams:
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
-        if not type(value) is Degree:
+        if type(value) is not Degree:
             raise TypeError('Polynomial degree must be of type <Degree>!')
         return value
 
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if not type(value) is QUEUE:
+        if type(value) is not QUEUE:
             raise TypeError('Coeff and phi must be multiprocessing Queues!')
         if value._closed:
             raise OSError('Coeff- and phi-queues must initially be open!')
@@ -52,7 +52,7 @@ class MinimizerParams:
 
     @staticmethod
     def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if not type(value) is STOP_FLAG:
+        if type(value) is not STOP_FLAG:
             raise TypeError('The stop flag must be a multiprocessing Event!')
         if value.is_set():
             raise ValueError('Stop flag must not be set on instantiation!')
@@ -63,7 +63,7 @@ class Minimizer(Process):
     def __init__(self, params: MinimizerParams) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
-        self.__c_init = InitialCoefficients(self.__params.degree)
+        self.__c_init = LagrangeCoefficients(self.__params.degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__phi_ijn = array([])
         self.__options = {'maxiter': MAXIMUM_ITERATIONS,
@@ -139,16 +139,18 @@ class Minimizer(Process):
 
     @staticmethod
     def __params_type_checked(value: MinimizerParams) -> MinimizerParams:
-        if not type(value) is MinimizerParams:
+        if type(value) is not MinimizerParams:
             raise TypeError('Parameters must be of type <MinimizerParams>!')
         return value
 
     def __type_and_shape_checked(self, value: ndarray) -> ndarray:
-        if not type(value) is ndarray:
+        if type(value) is not ndarray:
             raise TypeError('Phi_ijn matrix must be a numpy array!')
         if value.shape[0] != self.__c_init.coeffs.size:
-            raise ValueError('Dimensions of phi_ijn changed unexpectedly!')
+            raise ValueError('Dimensions of phi_ijn changed unexpectedly!'
+                             f' There should be {self.__c_init.coeffs.size}'
+                             f' rows, but there are now {value.shape[0]}.')
         if value.size == 0:
             self.__push(self.__c_init.coeffs)
-            raise Empty('Currently, there are no data points to process.')
+            raise Empty('There are no more data points to process.')
         return value
