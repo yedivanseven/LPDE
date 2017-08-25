@@ -5,6 +5,8 @@ from ..datatypes import Coefficients, Scalings, Event, Degree
 from ...geometry import Mapper, PointAt, Grid
 from ...producers import MockParams
 
+DEFAULT_PIXELS_Y = 100
+
 
 class ParallelEstimator:
     def __init__(self, degree: Degree, mapper: Mapper,
@@ -16,24 +18,33 @@ class ParallelEstimator:
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
+        aspect_ratio = mapper.bounds.aspect
+        pixels_x = int(DEFAULT_PIXELS_Y / aspect_ratio)
+        self.__grid = self.__make(Grid(pixels_x, DEFAULT_PIXELS_Y))
 
     @property
     def controller(self) -> Controller:
         return self.__controller
 
+    @property
+    def grid(self) -> (ndarray, ndarray):
+        return self.__grid
+
+    @grid.setter
+    def grid(self, grid: Grid) -> None:
+        grid = self.__grid_type_checked(grid)
+        self.__grid = self.__make(grid)
+
+    @property
+    def on_grid(self) -> ndarray:
+        p = square(legval2d(*self.__grid, self.__c.mat/self.__scale.mat))
+        return p * float64(self.__controller.N)
+
     def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
-        return self.__map.out(p * float64(self.__controller.N))
-
-    def on(self, grid: Grid) -> ndarray:
-        grid = self.__grid_type_checked(grid)
-        x_line = linspace(*self.__map.legendre_interval, grid.x)
-        y_line = linspace(*self.__map.legendre_interval, grid.y)
-        x_grid, y_grid = meshgrid(x_line, y_line)
-        p = square(legval2d(x_grid, y_grid, self.__c.mat/self.__scale.mat))
-        return p * float64(self.__controller.N)
+        return self.__map.out(p) * float64(self.__controller.N)
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)
@@ -43,9 +54,10 @@ class ParallelEstimator:
             raise AssertionError('Event queue is already closed. Instantiate a'
                                  ' new <Parallel> object to get going again!')
 
-    @property
-    def coefficients(self) -> ndarray:
-        return self.__c.vec
+    def __make(self, grid: Grid) -> (ndarray, ndarray):
+        x_line = linspace(*self.__map.legendre_interval, grid.x)
+        y_line = linspace(*self.__map.legendre_interval, grid.y)
+        return meshgrid(x_line, y_line)
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:

@@ -20,6 +20,10 @@ class BoundingBox:
         return self.__window.dimensions
 
     @property
+    def aspect(self) -> float:
+        return self.__window.dimensions[1]/self.__window.dimensions[1]
+
+    @property
     def x_range(self) -> (float, float):
         return self.__x_range
 
