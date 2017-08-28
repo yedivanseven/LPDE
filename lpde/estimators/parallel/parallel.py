@@ -38,7 +38,7 @@ class ParallelEstimator:
     @property
     def on_grid(self) -> ndarray:
         p = square(legval2d(*self.__grid, self.__c.mat/self.__scale.mat))
-        return p * float64(self.__controller.N)
+        return self.__map.out(p) * float64(self.__controller.N)
 
     def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)

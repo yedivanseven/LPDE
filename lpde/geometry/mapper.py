@@ -1,4 +1,4 @@
-from numpy import ndarray, float64
+from numpy import ndarray, float64, dtype
 from .boundingbox import BoundingBox
 from .support import WidthOf
 from .point import PointAt
@@ -6,7 +6,7 @@ from .point import PointAt
 
 class Mapper:
     def __init__(self, bounds: BoundingBox, support: WidthOf) -> None:
-        self.__bounds = self.__box_type_checked(bounds)
+        self.__bounds = self.__boundingbox_type_checked(bounds)
         self.__width_of = self.__width_type_checked(support)
         self.__legendre_interval = (-self.__width_of.legendre_support/2.0,
                                     +self.__width_of.legendre_support/2.0)
@@ -26,11 +26,11 @@ class Mapper:
         relative_position = point.position - self.__bounds.center
         return relative_position * self.__in_scale
 
-    def out(self, density: float64) -> float64:
+    def out(self, density: dtype) -> dtype:
         return density * self.__out_scale
 
     @staticmethod
-    def __box_type_checked(value: BoundingBox) -> BoundingBox:
+    def __boundingbox_type_checked(value: BoundingBox) -> BoundingBox:
         if type(value) is not BoundingBox:
             raise TypeError('Bounds must be of type <BoundingBox>!')
         return value
