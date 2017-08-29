@@ -2,13 +2,11 @@ from time import sleep
 from random import randint, expovariate, sample
 from uuid import uuid4
 from multiprocessing import Process, Queue
-from multiprocessing import Event as StopFlag
 from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
-from ..estimators.datatypes import Action, Event
+from ..estimators.datatypes import Action, Event, Flags
 
 QUEUE = type(Queue())
-STOP_FLAG = type(StopFlag())
 
 
 class MockParams:
@@ -65,20 +63,24 @@ class MockParams:
 
 class MockProducer(Process):
     def __init__(self, params: MockParams, bounds: BoundingBox,
-                 event_queue: QUEUE, stop_flag: STOP_FLAG) -> None:
+                 event_queue: QUEUE) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__bounds = self.__bounds_type_checked(bounds)
-        self.__stop_flag = self.__stop_type_checked(stop_flag)
         self.__event_queue = self.__queue_type_checked(event_queue)
+        self.__flag = Flags()
         self.__points = {}
         self.__according_to = {1: self.__add,
                                0: self.__move,
                               -1: self.__delete}
 
+    @property
+    def flag(self) -> Flags:
+        return self.__flag
+
     def run(self) -> None:
         n_points = 0
-        while not self.__stop_flag.is_set():
+        while not self.__flag.stop.is_set():
             if n_points < self.__params.build_up:
                 event = self.__add()
                 self.__push(event)
@@ -87,6 +89,7 @@ class MockProducer(Process):
                 event_type = randint(-1, 1) if self.__points else 1
                 event = self.__according_to[event_type]()
                 self.__push(event)
+        self.__flag.done.set()
 
     def __add(self) -> Event:
         location = self.__new_location()
@@ -138,12 +141,4 @@ class MockProducer(Process):
             raise TypeError('Event queue must be a multiprocessing Queue!')
         if value._closed:
             raise OSError('Event queue must be open on instantiation!')
-        return value
-
-    @staticmethod
-    def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if type(value) is not STOP_FLAG:
-            raise TypeError('The stop flag must be a multiprocessing Event!')
-        if value.is_set():
-            raise ValueError('Stop flag must not be set on instantiation!')
         return value

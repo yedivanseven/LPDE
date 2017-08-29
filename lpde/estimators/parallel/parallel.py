@@ -18,8 +18,7 @@ class ParallelEstimator:
         self.__c = Coefficients(self.__degree)
         self.__scale = Scalings(self.__degree)
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
-        aspect_ratio = mapper.bounds.aspect
-        pixels_x = int(DEFAULT_PIXELS_Y / aspect_ratio)
+        pixels_x = int(DEFAULT_PIXELS_Y / mapper.bounds.aspect)
         self.__grid = self.__make(Grid(pixels_x, DEFAULT_PIXELS_Y))
 
     @property

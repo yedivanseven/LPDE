@@ -1,25 +1,22 @@
 from multiprocessing import Process, Queue, Value
-from multiprocessing import Event as StopFlag
 from queue import Empty
 from numpy import ndarray
 from numpy.polynomial.legendre import legvander2d
 from pandas import DataFrame
-from ..datatypes import Scalings, Action, Event, Degree
+from ..datatypes import Scalings, Action, Event, Degree, Flags
 from ...geometry import Mapper
 
 QUEUE = type(Queue())
-STOP_FLAG = type(StopFlag())
 TIMEOUT = 1
 
 
 class TransformerParams:
     def __init__(self, degree: Degree, mapper: Mapper, event_queue: QUEUE,
-                 phi_queue: QUEUE, stop_flag: STOP_FLAG) -> None:
+                 phi_queue: QUEUE) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
         self.__event_queue = self.__queue_type_checked(event_queue)
         self.__phi_queue = self.__queue_type_checked(phi_queue)
-        self.__stop_flag = self.__stop_type_checked(stop_flag)
 
     @property
     def degree(self) -> Degree:
@@ -36,10 +33,6 @@ class TransformerParams:
     @property
     def phi_queue(self) -> QUEUE:
         return self.__phi_queue
-
-    @property
-    def stop_flag(self) -> STOP_FLAG:
-        return self.__stop_flag
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
@@ -61,20 +54,12 @@ class TransformerParams:
             raise OSError('Event- and phi-queues must initially be open!')
         return value
 
-    @staticmethod
-    def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if type(value) is not STOP_FLAG:
-            raise TypeError('The stop flag must be a multiprocessing Event!')
-        if value.is_set():
-            raise ValueError('Stop flag must not be set on instantiation!')
-        return value
-
 
 class Transformer(Process):
     def __init__(self, params: TransformerParams) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
-        self.__params.stop_flag.clear()
+        self.__flag = Flags()
         self.__degree = self.__params.degree
         self.__scale = Scalings(self.__degree)
         self.__phi_ijn = DataFrame(index=range(self.__scale.vec.size))
@@ -82,6 +67,10 @@ class Transformer(Process):
         self.__handler_of = {Action.ADD: self.__add,
                              Action.MOVE: self.__move,
                              Action.DELETE: self.__delete}
+
+    @property
+    def flag(self) -> Flags:
+        return self.__flag
 
     def run(self) -> None:
         while True:
@@ -92,12 +81,13 @@ class Transformer(Process):
                 raise OSError('Event queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
             except Empty:
-                if self.__params.stop_flag.is_set():
+                if self.__flag.stop.is_set():
                     break
             else:
                 data_changed_due_to = self.__handler_of[event.action]
                 if data_changed_due_to(event):
                     self.__push(self.__phi_ijn.values)
+        self.__flag.done.set()
 
     def __add(self, event: Event) -> bool:
         if event.id not in self.__phi_ijn.columns:

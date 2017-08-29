@@ -1,5 +1,4 @@
 from multiprocessing import Process, Queue, Array
-from multiprocessing import Event as StopFlag
 from numpy import float64
 from .transformer import TransformerParams, Transformer
 from .minimizer import MinimizerParams, Minimizer
@@ -17,7 +16,6 @@ class Controller:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
         self.__produce_params = self.__params_type_checked(produce_params)
-        self.__stop_flag = StopFlag()
         self.__event_queue = Queue()
         self.__phi_queue = Queue()
         self.__coeff_queue = Queue()
@@ -28,15 +26,12 @@ class Controller:
         self.__transformer_params = TransformerParams(self.__degree,
                                                       self.__mapper,
                                                       self.__event_queue,
-                                                      self.__phi_queue,
-                                                      self.__stop_flag)
+                                                      self.__phi_queue)
         self.__minimizer_params = MinimizerParams(self.__degree,
                                                   self.__phi_queue,
-                                                  self.__coeff_queue,
-                                                  self.__stop_flag)
+                                                  self.__coeff_queue)
         self.__smoother_params = SmootherParams(self.__coeff_queue,
-                                                self.__smooth_coeffs,
-                                                self.__stop_flag)
+                                                self.__smooth_coeffs)
         self.__minimizers = []
         self.__class_prefix = '_' + self.__class__.__name__ + '__'
 
@@ -135,8 +130,7 @@ class Controller:
         if not self.__has('producer'):
             self.__producer = MockProducer(self.__produce_params,
                                            self.__mapper.bounds,
-                                           self.__event_queue,
-                                           self.__stop_flag)
+                                           self.__event_queue)
             self.__producer.start()
 
     def __start_transformer(self) -> None:
@@ -148,8 +142,8 @@ class Controller:
         n_jobs = self.__integer_type_and_range_checked(n_jobs)
         for n in range(n_jobs):
             minimizer = Minimizer(self.__minimizer_params)
-            minimizer.start()
             self.__minimizers.append(minimizer)
+            minimizer.start()
 
     def __start_smoother(self, decay: float =1.0) -> None:
         decay = self.__float_type_and_range_checked(decay)
@@ -159,18 +153,31 @@ class Controller:
 
     def stop(self) -> None:
         self.__stop_processes()
+        self.__join_processes()
         self.__close_queues()
 
     def __stop_processes(self) -> None:
-        self.__stop_flag.set()
-        if self.__has('producer') and self.__producer.is_alive():
+        if self.__has('producer'):
+            self.__producer.flag.stop.set()
+            self.__producer.flag.done.wait()
+        if self.__has('transformer'):
+            self.__transformer.flag.stop.set()
+            self.__transformer.flag.done.wait()
+        for minimizer in self.__minimizers:
+            minimizer.flag.stop.set()
+            minimizer.flag.done.wait()
+        if self.__has('smoother'):
+            self.__smoother.flag.stop.set()
+            self.__smoother.flag.done.wait()
+
+    def __join_processes(self) -> None:
+        if self.__has('producer'):
             self.__producer.join()
-        if self.__has('transformer') and self.__transformer.is_alive():
+        if self.__has('transformer'):
             self.__transformer.join()
         for minimizer in self.__minimizers:
-            if minimizer.is_alive():
-                minimizer.join()
-        if self.__has('smoother') and self.__smoother.is_alive():
+            minimizer.join()
+        if self.__has('smoother'):
             self.__smoother.join()
 
     def __close_queues(self) -> None:

@@ -1,24 +1,23 @@
 from multiprocessing import Process, Queue
-from multiprocessing import Event as StopFlag
 from queue import Empty
-from numpy import zeros, square, log, ndarray, float64, array
+from numpy import zeros, square, log, ndarray, float64, array, seterr
 from scipy.optimize import fmin_l_bfgs_b, minimize
-from ..datatypes import LagrangeCoefficients, Degree
+from ..datatypes import LagrangeCoefficients, Degree, Flags
 
 QUEUE = type(Queue())
-STOP_FLAG = type(StopFlag())
 GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 TIMEOUT = 1
 
+seterr(over='ignore')
+
 
 class MinimizerParams:
     def __init__(self, degree: Degree, phi_queue: QUEUE,
-                 coeff_queue: QUEUE, stop_flag: STOP_FLAG) -> None:
+                 coeff_queue: QUEUE) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__phi_queue = self.__queue_type_checked(phi_queue)
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
-        self.__stop_flag = self.__stop_type_checked(stop_flag)
 
     @property
     def degree(self):
@@ -31,10 +30,6 @@ class MinimizerParams:
     @property
     def coeff_queue(self):
         return self.__coeff_queue
-
-    @property
-    def stop_flag(self) -> STOP_FLAG:
-        return self.__stop_flag
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
@@ -50,19 +45,12 @@ class MinimizerParams:
             raise OSError('Coeff- and phi-queues must initially be open!')
         return value
 
-    @staticmethod
-    def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if type(value) is not STOP_FLAG:
-            raise TypeError('The stop flag must be a multiprocessing Event!')
-        if value.is_set():
-            raise ValueError('Stop flag must not be set on instantiation!')
-        return value
-
 
 class Minimizer(Process):
     def __init__(self, params: MinimizerParams) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
+        self.__flag = Flags()
         self.__c_init = LagrangeCoefficients(self.__params.degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__phi_ijn = array([])
@@ -71,6 +59,10 @@ class Minimizer(Process):
         self.__constraint = {'type': 'eq',
                              'fun': self.__norm,
                              'jac': self.__grad_norm}
+
+    @property
+    def flag(self) -> Flags:
+        return self.__flag
 
     def run(self) -> None:
         while True:
@@ -81,10 +73,11 @@ class Minimizer(Process):
                 raise OSError('Phi queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
             except Empty:
-                if self.__params.stop_flag.is_set():
+                if self.__flag.stop.is_set():
                     break
             else:
                 self.__minimize()
+        self.__flag.done.set()
 
     def __minimize(self) -> None:
         self.__c_init.lagrange = self.__phi_ijn.shape[1]

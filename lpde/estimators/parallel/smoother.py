@@ -1,21 +1,18 @@
 from multiprocessing import Process, Queue, Array
-from multiprocessing import Event as StopFlag
 from queue import Empty
 from numpy import frombuffer, exp, ndarray, float64
 from time import perf_counter
+from ..datatypes import Flags
 
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
-STOP_FLAG = type(StopFlag())
 STOP = 1  # Queue-get timeout in seconds for process termination.
 
 
 class SmootherParams():
-    def __init__(self, coeff_queue: QUEUE, smooth_coeffs: ARRAY,
-                 stop_flag: STOP_FLAG) -> None:
+    def __init__(self, coeff_queue: QUEUE, smooth_coeffs: ARRAY) -> None:
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
         self.__smooth_coeffs = self.__array_type_checked(smooth_coeffs)
-        self.__stop_flag = self.__stop_type_checked(stop_flag)
 
     @property
     def coeff_queue(self) -> QUEUE:
@@ -24,10 +21,6 @@ class SmootherParams():
     @property
     def smooth_coeffs(self) -> ARRAY:
         return self.__smooth_coeffs
-
-    @property
-    def stop_flag(self) -> STOP_FLAG:
-        return self.__stop_flag
 
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
@@ -43,28 +36,25 @@ class SmootherParams():
             raise TypeError('Smooth coefficients must be a shared Array!')
         return value
 
-    @staticmethod
-    def __stop_type_checked(value: STOP_FLAG) -> STOP_FLAG:
-        if type(value) is not STOP_FLAG:
-            raise TypeError('The stop flag must be a multiprocessing Event!')
-        if value.is_set():
-            raise ValueError('Stop flag must not be set on instantiation!')
-        return value
-
 
 class Smoother(Process):
     def __init__(self, params: SmootherParams, decay: float) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__decay = self.__float_type_and_range_checked(decay)
+        self.__flag = Flags()
         self.__init = frombuffer(self.__params.smooth_coeffs.get_obj()).copy()
         self.__shape = self.__init.shape
+
+    @property
+    def flag(self) -> Flags:
+        return self.__flag
 
     def run(self) -> None:
         raw_coeffs = self.__init.copy()
         smooth_coeffs = self.__init.copy()
         while True:
-            block = self.__params.stop_flag.is_set()
+            block = self.__flag.stop.is_set()
             start_time = perf_counter()
             try:
                 item = self.__params.coeff_queue.get(block=block, timeout=STOP)
@@ -73,13 +63,14 @@ class Smoother(Process):
                 raise OSError('Coefficient queue has been closed. Instantiate'
                               ' a new <Parallel> object to get going again!')
             except Empty:
-                if self.__params.stop_flag.is_set():
+                if self.__flag.stop.is_set():
                     break
             time_difference = perf_counter() - start_time
             damping = 1.0 - exp(-time_difference / self.__decay)
             smooth_coeffs = damping*raw_coeffs + (1.0-damping)*smooth_coeffs
             with self.__params.smooth_coeffs.get_lock():
                 self.__params.smooth_coeffs.get_obj()[:] = smooth_coeffs
+        self.__flag.done.set()
 
     @staticmethod
     def __params_type_checked(value: SmootherParams) -> SmootherParams:
