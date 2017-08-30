@@ -5,9 +5,9 @@ from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import LagrangeCoefficients, Degree, Flags
 
 QUEUE = type(Queue())
-GRADIENT_TOLERANCE = 0.1
-MAXIMUM_ITERATIONS = 10000
-TIMEOUT = 1
+GRADIENT_TOLERANCE: float = 0.1
+MAXIMUM_ITERATIONS: int = 10000
+TIMEOUT: float = 1.0
 
 
 class MinimizerParams:

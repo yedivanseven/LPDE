@@ -7,7 +7,7 @@ from ..datatypes import Scalings, Action, Event, Degree, Flags
 from ...geometry import Mapper
 
 QUEUE = type(Queue())
-TIMEOUT = 1
+TIMEOUT: float = 1.0
 
 
 class TransformerParams:

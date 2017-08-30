@@ -1,11 +1,6 @@
 from numpy.random import multivariate_normal as mv_norm
-from ...geometry import PointAt, BoundingBox
-
-
-def boundingbox_type_checked(value) -> BoundingBox:
-    if type(value) is not BoundingBox:
-        raise TypeError('Bounds must be of type <BoundingBox>!')
-    return value
+from .helpers.typechecks import boundingbox_type_checked
+from ..geometry import PointAt, BoundingBox
 
 
 def gaussian(bounds: BoundingBox) -> PointAt:

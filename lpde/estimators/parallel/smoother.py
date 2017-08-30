@@ -6,7 +6,7 @@ from ..datatypes import Flags
 
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
-STOP = 1  # Queue-get timeout in seconds for process termination.
+STOP: float = 1  # Queue-get timeout in seconds for process termination.
 
 
 class SmootherParams():

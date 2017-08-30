@@ -6,8 +6,8 @@ from ...geometry import Mapper, PointAt, Grid
 from ..datatypes import Coefficients, LagrangeCoefficients
 from ..datatypes import Scalings, Event, Degree, Action
 
-GRADIENT_TOLERANCE = 0.1
-MAXIMUM_ITERATIONS = 10000
+GRADIENT_TOLERANCE: float = 0.1
+MAXIMUM_ITERATIONS: int = 10000
 
 
 class SerialEstimator:
