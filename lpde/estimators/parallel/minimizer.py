@@ -1,6 +1,6 @@
 from multiprocessing import Process, Queue
 from queue import Empty
-from numpy import zeros, square, log, ndarray, float64, array, seterr
+from numpy import zeros, square, log, ndarray, float64, array
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import LagrangeCoefficients, Degree, Flags
 
@@ -8,8 +8,6 @@ QUEUE = type(Queue())
 GRADIENT_TOLERANCE = 0.1
 MAXIMUM_ITERATIONS = 10000
 TIMEOUT = 1
-
-seterr(over='ignore')
 
 
 class MinimizerParams:

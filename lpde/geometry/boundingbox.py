@@ -21,7 +21,7 @@ class BoundingBox:
 
     @property
     def aspect(self) -> float:
-        return self.__window.dimensions[1]/self.__window.dimensions[1]
+        return self.__window.dimensions[1]/self.__window.dimensions[0]
 
     @property
     def x_range(self) -> (float, float):
