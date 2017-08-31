@@ -2,9 +2,8 @@ from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legval2d
 from .controller import Controller
 from ..datatypes import Coefficients, Scalings, Event, Degree
-from ...geometry import Mapper, PointAt, Grid
+from ...geometry import Mapper, PointAt, Grid, BoundingBox
 from ...producers import MockParams
-from ...visualizers import animate
 
 DEFAULT_PIXELS_Y: int = 100
 
@@ -19,8 +18,12 @@ class ParallelEstimator:
         self.__c = Coefficients(self.__degree)
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
         self.__scale = Scalings(self.__degree)
-        pixels_x = int(DEFAULT_PIXELS_Y / mapper.bounds.aspect)
+        pixels_x = int(DEFAULT_PIXELS_Y / self.__map.bounds.aspect)
         self.__grid = self.__make(Grid(pixels_x, DEFAULT_PIXELS_Y))
+
+    @property
+    def bounds(self) -> BoundingBox:
+        return self.__map.bounds
 
     @property
     def controller(self) -> Controller:
@@ -45,9 +48,6 @@ class ParallelEstimator:
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
         return self.__map.out(p) * float64(self.__controller.N)
-
-    def show(self, cartopy: bool =False) -> None:
-        animate(self.on_grid, self.__map.bounds, cartopy)
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)

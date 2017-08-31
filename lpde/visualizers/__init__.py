@@ -1,1 +1,1 @@
-from .animate import animate
+from .visualize import Visualize
