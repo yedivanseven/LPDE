@@ -31,6 +31,10 @@ class BoundingBox:
     def y_range(self) -> (float, float):
         return self.__y_range
 
+    @property
+    def extent(self) -> (float, float, float, float):
+        return self.__x_range + self.__y_range
+
     def contain(self, point: PointAt) -> bool:
         point = self.__point_type_checked(point)
         x_inside = self.__x_range[0] <= point.position[0] <= self.__x_range[1]
