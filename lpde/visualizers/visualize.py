@@ -27,7 +27,8 @@ try:
         axis.set_extent(extent)
         axis.add_image(osm, 11)
         plot_params = {'extent': axis.get_extent(),
-                       'cmap': transparent_viridis()}
+                       'cmap': transparent_viridis(),
+                       'transform': osm.crs}
         return axis, plot_params
 except ImportError:
     CARTOPY_IS_THERE = False
