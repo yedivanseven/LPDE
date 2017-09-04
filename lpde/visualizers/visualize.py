@@ -63,7 +63,7 @@ class Visualize:
     @staticmethod
     def __matplotlib_axis(_) -> (Subplot, dict):
         axis = axes()
-        axis.set(xlabel='longitude', ylabel='latitude')
+        axis.set(xlabel=r'$x$', ylabel=r'$y$')
         plot_params = {'cmap': 'viridis'}
         return axis, plot_params
 
