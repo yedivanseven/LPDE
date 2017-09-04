@@ -35,6 +35,12 @@ class BoundingBox:
     def extent(self) -> (float, float, float, float):
         return self.__x_range + self.__y_range
 
+    @property
+    def are_geo(self) -> bool:
+        valid = True and -180.0 < self.__x_range[0] < self.__x_range[1] < 180.0
+        valid = valid and -90.0 < self.__y_range[0] < self.__y_range[1] < 90.0
+        return valid
+
     def contain(self, point: PointAt) -> bool:
         point = self.__point_type_checked(point)
         x_inside = self.__x_range[0] <= point.position[0] <= self.__x_range[1]
@@ -42,6 +48,7 @@ class BoundingBox:
         return True if x_inside and y_inside else False
 
     contains = contain
+    is_geo = are_geo
 
     @staticmethod
     def __point_type_checked(value: PointAt) -> PointAt:
@@ -64,3 +71,4 @@ if __name__ == '__main__':
     print(bounding_box.window)
     print(bounding_box.x_range)
     print(bounding_box.y_range)
+    print(bounding_box.is_geographically_valid)
