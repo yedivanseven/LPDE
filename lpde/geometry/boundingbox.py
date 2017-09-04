@@ -37,7 +37,7 @@ class BoundingBox:
 
     @property
     def are_geo(self) -> bool:
-        valid = True and -180.0 < self.__x_range[0] < self.__x_range[1] < 180.0
+        valid = True and -170.0 < self.__x_range[0] < self.__x_range[1] < 170.0
         valid = valid and -90.0 < self.__y_range[0] < self.__y_range[1] < 90.0
         return valid
 

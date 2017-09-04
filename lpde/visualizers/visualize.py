@@ -17,15 +17,16 @@ class Visualize:
     def __init__(self, density: ParallelEstimator) -> None:
         self.__density = self.__density_type_checked(density)
         self.__image = None
-        self.__depending_on_whether_we = {True: self.__cartopy_geo_axis,
-                                          False: self.__matplotlib_axis}
+        self.__depends_on_whether_we = {True: self.__cartopy_geo_axis,
+                                        False: self.__matplotlib_axis}
 
-    def show(self, cartopy: bool =False) -> FuncAnimation:
+    def show(self, cartopy: bool =False, zoom: int =10) -> FuncAnimation:
         use_cartopy = self.__boolean_type_checked(cartopy)
+        zoom = self.__integer_type_and_range_checked(zoom)
         figure_size = (DEFAULT_FIGURE_SIZE_IN_X,
                        DEFAULT_FIGURE_SIZE_IN_X * self.__density.bounds.aspect)
         image_figure = figure(figsize=figure_size)
-        contour_axis, params = self.__depending_on_whether_we[use_cartopy]()
+        contour_axis, params = self.__depends_on_whether_we[use_cartopy](zoom)
         self.__image = contour_axis.imshow(self.__density.on_grid,
                                            origin='lower',
                                            animated=True,
@@ -42,11 +43,11 @@ class Visualize:
         image_figure.show()
         return animation
 
-    def __cartopy_geo_axis(self) -> (GeoAxesSubplot, dict):
+    def __cartopy_geo_axis(self, zoom: int) -> (GeoAxesSubplot, dict):
         osm = OSM()
         axis = axes(projection=osm.crs)
         axis.set_extent(self.__density.bounds.extent)
-        axis.add_image(osm, 11)
+        axis.add_image(osm, zoom)
         axis.text(-0.05, 0.50, 'latitude',
                   rotation='vertical',
                   verticalalignment='center',
@@ -60,7 +61,7 @@ class Visualize:
         return axis, plot_params
 
     @staticmethod
-    def __matplotlib_axis() -> (Subplot, dict):
+    def __matplotlib_axis(_) -> (Subplot, dict):
         axis = axes()
         axis.set(xlabel='longitude', ylabel='latitude')
         plot_params = {'cmap': 'viridis'}
@@ -91,4 +92,12 @@ class Visualize:
             raise TypeError('Cartopy flag must be boolean!')
         if value and not self.__density.bounds.are_geo:
             return False
+        return value
+
+    @staticmethod
+    def __integer_type_and_range_checked(value) -> int:
+        if type(value) is not int:
+            raise TypeError('Zoom level must be an integer!')
+        if not 0 <= value <= 19:
+            raise ValueError('Zoom level must be between 0 and 19!')
         return value
