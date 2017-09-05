@@ -1,5 +1,5 @@
 from multiprocessing import Process, Queue
-from queue import Empty
+from queue import Empty, Full
 from numpy import zeros, square, log, ndarray, float64, array
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import LagrangeCoefficients, Degree, Flags
@@ -98,13 +98,15 @@ class Minimizer(Process):
         if result.success:
             self.__push(result.x)
 
-    def __push(self, data: ndarray) -> None:
+    def __push(self, coefficients: ndarray) -> None:
         try:
-            self.__params.coeff_queue.put(data)
+            self.__params.coeff_queue.put(coefficients, timeout=TIMEOUT)
         except AssertionError:
             err_msg = ('Coefficient queue is already closed. Instantiate'
                        ' a new <Parallel> object to get going again!')
             raise AssertionError(err_msg)
+        except Full:
+            raise Full('Coefficient queue is full!')
 
     def __lagrangian(self, c: ndarray) -> float64:
         return self.__neg_log_l(c[1:]) + c[0]*self.__norm(c[1:])

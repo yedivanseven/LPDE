@@ -1,5 +1,5 @@
 from multiprocessing import Process, Queue, Value
-from queue import Empty
+from queue import Empty, Full
 from numpy import ndarray
 from numpy.polynomial.legendre import legvander2d
 from pandas import DataFrame
@@ -117,11 +117,13 @@ class Transformer(Process):
 
     def __push(self, array: ndarray) -> None:
         try:
-            self.__params.phi_queue.put(array)
+            self.__params.phi_queue.put(array, timeout=TIMEOUT)
         except AssertionError:
             err_msg = ('Phi queue is already closed. Instantiate a'
                        ' new <Parallel> object to start all over!')
             raise AssertionError(err_msg)
+        except Full:
+            raise Full('Phi queue is full!')
 
     @property
     def N(self) -> int:

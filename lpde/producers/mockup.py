@@ -2,11 +2,13 @@ from time import sleep
 from random import randint, expovariate, sample
 from uuid import uuid4
 from multiprocessing import Process, Queue
+from queue import Full
 from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
 from ..estimators.datatypes import Action, Event, Flags
 
 QUEUE = type(Queue())
+TIMEOUT: float = 1.0
 
 
 class MockParams:
@@ -111,11 +113,13 @@ class MockProducer(Process):
     def __push(self, event: Event) -> None:
         sleep(expovariate(self.__params.rate))
         try:
-            self.__event_queue.put(event)
+            self.__event_queue.put(event, timeout=TIMEOUT)
         except AssertionError:
             err_msg = ('Event queue is already closed. Instantiate'
                        ' a new <Parallel> object to get going again!')
             raise AssertionError(err_msg)
+        except Full:
+            raise Full('Event queue is full!')
 
     def __new_location(self) -> PointAt:
         location: PointAt = self.__params.dist(self.__bounds)

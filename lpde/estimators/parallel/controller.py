@@ -7,6 +7,7 @@ from ..datatypes import Degree, Coefficients
 from ...geometry import Mapper
 from ...producers import MockProducer, PRODUCER_TYPES
 
+MAXIMAL_QUEUE_SIZE: int = 1000
 QUEUE = type(Queue())
 ARRAY = type(Array('d', 10))
 
@@ -16,9 +17,9 @@ class Controller:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
         self.__produce_params = self.__params_type_checked(produce_params)
-        self.__event_queue = Queue()
-        self.__phi_queue = Queue()
-        self.__coeff_queue = Queue()
+        self.__event_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
+        self.__phi_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
+        self.__coeff_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
         self.__queues = (self.__event_queue,
                          self.__phi_queue,
                          self.__coeff_queue)
