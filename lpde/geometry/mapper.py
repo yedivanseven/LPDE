@@ -1,4 +1,5 @@
-from numpy import ndarray, float64, dtype
+from typing import Union
+from numpy import ndarray, dtype
 from .boundingbox import BoundingBox
 from .support import WidthOf
 from .point import PointAt
@@ -11,7 +12,7 @@ class Mapper:
         self.__legendre_interval = (-self.__width_of.legendre_support/2.0,
                                     +self.__width_of.legendre_support/2.0)
         self.__in_scale = self.__width_of.legendre_support/self.__bounds.window
-        self.__out_scale = float64(4.0 / self.__bounds.window.prod())
+        self.__out_scale = 4.0 / self.__bounds.window.prod()
 
     @property
     def legendre_interval(self) -> (float, float):
@@ -26,7 +27,7 @@ class Mapper:
         relative_position = point.position - self.__bounds.center
         return relative_position * self.__in_scale
 
-    def out(self, density: dtype) -> dtype:
+    def out(self, density: Union[dtype, ndarray]) -> Union[dtype, ndarray]:
         return density * self.__out_scale
 
     @staticmethod
@@ -51,6 +52,7 @@ class Mapper:
 
 if __name__ == '__main__':
     from .window import Window
+    from numpy import float64
 
     center = PointAt(4, 4)
     window = Window(2, 2)

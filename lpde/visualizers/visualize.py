@@ -95,7 +95,7 @@ class Visualize:
         return value
 
     @staticmethod
-    def __integer_type_and_range_checked(value) -> int:
+    def __integer_type_and_range_checked(value: int) -> int:
         if type(value) is not int:
             raise TypeError('Zoom level must be an integer!')
         if not 0 <= value <= 19:

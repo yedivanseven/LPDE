@@ -1,5 +1,6 @@
-from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
-from numpy.polynomial.legendre import legval2d
+from typing import Union
+from numpy import square, ndarray, dtype, frombuffer, linspace, meshgrid, array
+from numpy.polynomial.legendre import legval2d, legder
 from .controller import Controller
 from ..datatypes import Coefficients, Scalings, Event, Degree
 from ...geometry import Mapper, PointAt, Grid, BoundingBox
@@ -41,13 +42,39 @@ class ParallelEstimator:
     @property
     def on_grid(self) -> ndarray:
         p = square(legval2d(*self.__grid, self.__c.mat/self.__scale.mat))
-        return self.__map.out(p) * float64(self.__controller.N)
+        return self.__map.out(p) * self.__controller.N
 
-    def at(self, point: PointAt) -> float64:
+    @property
+    def gradient_on_grid(self) -> (ndarray, ndarray):
+        coeffs_of_grad_x = legder(self.__c.mat/self.__scale.mat, axis=0)
+        coeffs_of_grad_y = legder(self.__c.mat/self.__scale.mat, axis=1)
+        grad_x = (legval2d(*self.__grid, self.__c.mat/self.__scale.mat) *
+                  legval2d(*self.__grid, coeffs_of_grad_x) * 2.0)
+        grad_y = (legval2d(*self.__grid, self.__c.mat/self.__scale.mat) *
+                  legval2d(*self.__grid, coeffs_of_grad_y) * 2.0)
+        return (self.__map.out(grad_x) * self.__controller.N,
+                self.__map.out(grad_y) * self.__controller.N)
+
+    def at(self, point: PointAt) -> Union[dtype, ndarray]:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
-        return self.__map.out(p) * float64(self.__controller.N)
+        return self.__map.out(p) * self.__controller.N
+
+    def gradient_at(self, point: PointAt) -> ndarray:
+        point = self.__point_type_checked(point)
+        mapped_point = self.__map.in_from(point)
+        coeffs_of_grad_x = legder(self.__c.mat/self.__scale.mat, axis=0)
+        coeffs_of_grad_y = legder(self.__c.mat/self.__scale.mat, axis=1)
+        grad_x = (legval2d(*mapped_point, self.__c.mat/self.__scale.mat) *
+                  legval2d(*mapped_point, coeffs_of_grad_x) * 2.0)
+        grad_y = (legval2d(*mapped_point, self.__c.mat/self.__scale.mat) *
+                  legval2d(*mapped_point, coeffs_of_grad_y) * 2.0)
+        print(mapped_point)
+        print(grad_x)
+        grad = array([grad_x, grad_y])
+        return self.__map.out(grad) * self.__controller.N
+
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)

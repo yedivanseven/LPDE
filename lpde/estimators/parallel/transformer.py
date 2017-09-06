@@ -91,7 +91,10 @@ class Transformer(Process):
 
     def __add(self, event: Event) -> bool:
         if event.id not in self.__phi_ijn.columns:
-            location = self.__params.map.in_from(event.location)
+            try:
+                location = self.__params.map.in_from(event.location)
+            except ValueError:
+                return False
             phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
             self.__phi_ijn.loc[:, event.id] = phi_ijn
             with self.__N.get_lock():
@@ -101,7 +104,10 @@ class Transformer(Process):
 
     def __move(self, event: Event) -> bool:
         if event.id in self.__phi_ijn.columns:
-            location = self.__params.map.in_from(event.location)
+            try:
+                location = self.__params.map.in_from(event.location)
+            except ValueError:
+                return False
             phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
             self.__phi_ijn.loc[:, event.id] = phi_ijn
             return True
