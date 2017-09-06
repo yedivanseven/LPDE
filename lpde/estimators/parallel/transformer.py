@@ -62,7 +62,8 @@ class Transformer(Process):
         self.__flag = Flags()
         self.__degree = self.__params.degree
         self.__scale = Scalings(self.__degree)
-        self.__phi_ijn = DataFrame(index=range(self.__scale.vec.size))
+        # self.__phi_ijn = DataFrame(index=range(self.__scale.vec.size))
+        self.__phi_ijn = DataFrame(index=('x', 'y'))  # Remove line!
         self.__N = Value('i', 0)
         self.__handler_of = {Action.ADD: self.__add,
                              Action.MOVE: self.__move,
@@ -95,8 +96,8 @@ class Transformer(Process):
                 location = self.__params.map.in_from(event.location)
             except ValueError:
                 return False
-            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-            self.__phi_ijn.loc[:, event.id] = phi_ijn
+        # phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+            self.__phi_ijn.loc[:, event.id] = location  # put back phi_ijn instead of location
             with self.__N.get_lock():
                 self.__N.value += 1
             return True
@@ -108,8 +109,8 @@ class Transformer(Process):
                 location = self.__params.map.in_from(event.location)
             except ValueError:
                 return False
-            phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-            self.__phi_ijn.loc[:, event.id] = phi_ijn
+        # phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
+            self.__phi_ijn.loc[:, event.id] = location  # put back phi_ijn instead of location
             return True
         return False
 

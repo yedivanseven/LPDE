@@ -1,8 +1,10 @@
 from multiprocessing import Process, Queue
 from queue import Empty, Full
 from numpy import zeros, square, log, ndarray, float64, array
+from numpy.polynomial.legendre import legvander2d  # Remove line!
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import LagrangeCoefficients, Degree, Flags
+from ..datatypes import Scalings  # Remove line!
 
 QUEUE = type(Queue())
 GRADIENT_TOLERANCE: float = 0.1
@@ -52,6 +54,8 @@ class Minimizer(Process):
         self.__c_init = LagrangeCoefficients(self.__params.degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__phi_ijn = array([])
+        self.__positions = array([])  # Remove line!
+        self.__scale = Scalings(self.__params.degree)
         self.__options = {'maxiter': MAXIMUM_ITERATIONS,
                           'disp': False}
         self.__constraint = {'type': 'eq',
@@ -66,7 +70,8 @@ class Minimizer(Process):
         while True:
             try:
                 item_from_queue = self.__params.phi_queue.get(timeout=TIMEOUT)
-                self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
+            # self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
+                self.__positions = item_from_queue
             except OSError:
                 raise OSError('Phi queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
@@ -74,6 +79,7 @@ class Minimizer(Process):
                 if self.__flag.stop.is_set():
                     break
             else:
+                self.__phi_ijn = legvander2d(*item_from_queue, self.__params.degree).T/self.__scale.vec[:, None]  # Remove line!
                 self.__minimize()
         self.__flag.done.set()
 
