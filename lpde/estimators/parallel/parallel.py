@@ -1,4 +1,5 @@
-from numpy import square, ndarray, frombuffer, linspace, meshgrid, array
+from typing import Union
+from numpy import square, ndarray, dtype, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legval2d, legder
 from .controller import Controller
 from ..datatypes import Coefficients, Scalings, Event, Degree
@@ -6,6 +7,7 @@ from ...geometry import Mapper, PointAt, Grid, BoundingBox
 from ...producers import MockParams
 
 DEFAULT_PIXELS_Y: int = 100
+NUMPY_TYPE = Union[dtype, ndarray]
 
 
 class ParallelEstimator:
@@ -46,22 +48,15 @@ class ParallelEstimator:
     def gradient_on_grid(self) -> (ndarray, ndarray):
         return self.__gradient(self.__grid)
 
-    def at(self, point: PointAt) -> ndarray:
+    def at(self, point: PointAt) -> dtype:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         return self.__density(mapped_point)
 
-    def gradient_at(self, point: PointAt) -> ndarray:
+    def gradient_at(self, point: PointAt) -> (dtype, dtype):
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
-        coeffs_of_grad_x = legder(self.__c.mat/self.__scale.mat, axis=0)
-        coeffs_of_grad_y = legder(self.__c.mat/self.__scale.mat, axis=1)
-        grad_x = (legval2d(*mapped_point, self.__c.mat/self.__scale.mat) *
-                  legval2d(*mapped_point, coeffs_of_grad_x) * 2.0)
-        grad_y = (legval2d(*mapped_point, self.__c.mat/self.__scale.mat) *
-                  legval2d(*mapped_point, coeffs_of_grad_y) * 2.0)
-        grad = array([grad_x, grad_y])
-        return self.__map.out(grad) * self.__controller.N
+        return self.__gradient(mapped_point)
 
     def update_with(self, event: Event) -> None:
         event = self.__event_type_checked(event)
@@ -76,11 +71,11 @@ class ParallelEstimator:
         y_line = linspace(*self.__map.legendre_interval, grid.y)
         return meshgrid(x_line, y_line)
 
-    def __density(self, point_grid: ndarray) -> ndarray:
+    def __density(self, point_grid: NUMPY_TYPE) -> NUMPY_TYPE:
         density = square(legval2d(*point_grid, self.__c.mat/self.__scale.mat))
         return self.__map.out(density) * self.__controller.N
 
-    def __gradient(self, point_grid: ndarray) -> (ndarray, ndarray):
+    def __gradient(self, point_grid: ndarray) -> (NUMPY_TYPE, NUMPY_TYPE):
         coeffs_of_grad_x = legder(self.__c.mat / self.__scale.mat, axis=0)
         coeffs_of_grad_y = legder(self.__c.mat / self.__scale.mat, axis=1)
         sqrt_p = legval2d(*point_grid, self.__c.mat/self.__scale.mat)
