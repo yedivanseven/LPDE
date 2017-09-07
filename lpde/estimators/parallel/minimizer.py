@@ -13,10 +13,10 @@ TIMEOUT: float = 1.0
 
 
 class MinimizerParams:
-    def __init__(self, degree: Degree, phi_queue: QUEUE,
+    def __init__(self, degree: Degree, point_queue: QUEUE,
                  coeff_queue: QUEUE) -> None:
         self.__degree = self.__degree_type_checked(degree)
-        self.__phi_queue = self.__queue_type_checked(phi_queue)
+        self.__point_queue = self.__queue_type_checked(point_queue)
         self.__coeff_queue = self.__queue_type_checked(coeff_queue)
 
     @property
@@ -24,8 +24,8 @@ class MinimizerParams:
         return self.__degree
 
     @property
-    def phi_queue(self):
-        return self.__phi_queue
+    def point_queue(self):
+        return self.__point_queue
 
     @property
     def coeff_queue(self):
@@ -54,7 +54,6 @@ class Minimizer(Process):
         self.__c_init = LagrangeCoefficients(self.__params.degree)
         self.__grad_c = zeros(self.__c_init.vector.size)
         self.__phi_ijn = array([])
-        self.__positions = array([])  # Remove line!
         self.__scale = Scalings(self.__params.degree)
         self.__options = {'maxiter': MAXIMUM_ITERATIONS,
                           'disp': False}
@@ -69,9 +68,8 @@ class Minimizer(Process):
     def run(self) -> None:
         while True:
             try:
-                item_from_queue = self.__params.phi_queue.get(timeout=TIMEOUT)
-            # self.__phi_ijn = self.__type_and_shape_checked(item_from_queue)
-                self.__positions = item_from_queue
+                queue_item = self.__params.point_queue.get(timeout=TIMEOUT)
+                points = self.__type_and_shape_checked(queue_item)
             except OSError:
                 raise OSError('Phi queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
@@ -79,7 +77,8 @@ class Minimizer(Process):
                 if self.__flag.stop.is_set():
                     break
             else:
-                self.__phi_ijn = legvander2d(*item_from_queue, self.__params.degree).T/self.__scale.vec[:, None]  # Remove line!
+                self.__phi_ijn = legvander2d(*points, self.__params.degree).T/\
+                                 self.__scale.vecT
                 self.__minimize()
         self.__flag.done.set()
 
@@ -144,12 +143,12 @@ class Minimizer(Process):
 
     def __type_and_shape_checked(self, value: ndarray) -> ndarray:
         if type(value) is not ndarray:
-            raise TypeError('Phi_ijn matrix must be a numpy array!')
-        if value.shape[0] != self.__c_init.coeffs.size:
-            raise ValueError('Dimensions of phi_ijn changed unexpectedly!'
-                             f' There should be {self.__c_init.coeffs.size}'
-                             f' rows, but there are now {value.shape[0]}.')
+            raise TypeError('Matrix with data points must be a numpy array!')
+        if value.shape[0] != 2:
+            raise ValueError('Dimensions of data-points matrix is wrong!'
+                             f' There should be 2 rows (x and y) but'
+                             f' there are now {value.shape[0]}.')
         if value.size == 0:
             self.__push(self.__c_init.coeffs)
-            raise Empty('There are no more data points to process.')
+            raise Empty('The data points matrix seems to be emtpy.')
         return value

@@ -1,4 +1,4 @@
-from numpy import sqrt, array, ndarray
+from numpy import sqrt, array, ndarray, newaxis
 from .degree import Degree
 
 
@@ -9,10 +9,15 @@ class Scalings:
                                 for l in range(self.__degree.l_max + 1)]
                                for k in range(self.__degree.k_max + 1)])
         self.__vector = self.__matrix.ravel()
+        self.__vector_transposed = self.__vector[:, newaxis]
 
     @property
     def vec(self) -> ndarray:
         return self.__vector
+
+    @property
+    def vecT(self) -> ndarray:
+        return self.__vector_transposed
 
     @property
     def mat(self) -> ndarray:
@@ -30,3 +35,4 @@ if __name__ == '__main__':
     scale = Scalings(degree)
     print(scale.mat)
     print(scale.vec)
+    print(scale.vecT)

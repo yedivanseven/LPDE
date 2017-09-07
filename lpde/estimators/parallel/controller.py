@@ -1,6 +1,6 @@
 from multiprocessing import Process, Queue, Array
 from numpy import float64
-from .transformer import TransformerParams, Transformer
+from .datagate import DataGateParams, DataGate
 from .minimizer import MinimizerParams, Minimizer
 from .smoother import SmootherParams, Smoother
 from ..datatypes import Degree, Coefficients
@@ -18,18 +18,18 @@ class Controller:
         self.__mapper = self.__mapper_type_checked(mapper)
         self.__produce_params = self.__params_type_checked(produce_params)
         self.__event_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
-        self.__phi_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
+        self.__point_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
         self.__coeff_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
         self.__queues = (self.__event_queue,
-                         self.__phi_queue,
+                         self.__point_queue,
                          self.__coeff_queue)
         self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
-        self.__transformer_params = TransformerParams(self.__degree,
-                                                      self.__mapper,
-                                                      self.__event_queue,
-                                                      self.__phi_queue)
+        self.__datagate_params = DataGateParams(self.__degree,
+                                                self.__mapper,
+                                                self.__event_queue,
+                                                self.__point_queue)
         self.__minimizer_params = MinimizerParams(self.__degree,
-                                                  self.__phi_queue,
+                                                  self.__point_queue,
                                                   self.__coeff_queue)
         self.__smoother_params = SmootherParams(self.__coeff_queue,
                                                 self.__smooth_coeffs)
@@ -41,8 +41,8 @@ class Controller:
         return self.__event_queue
 
     @property
-    def phi_queue(self) -> QUEUE:
-        return self.__phi_queue
+    def point_queue(self) -> QUEUE:
+        return self.__point_queue
 
     @property
     def coeff_queue(self) -> QUEUE:
@@ -55,10 +55,10 @@ class Controller:
         raise AttributeError('Producer process not started yet!')
 
     @property
-    def transformer(self) -> Process:
-        if self.__has('transformer'):
-            return self.__transformer
-        raise AttributeError('Transformer process not started yet!')
+    def datagate(self) -> Process:
+        if self.__has('datagate'):
+            return self.__datagate
+        raise AttributeError('Datagate process not started yet!')
 
     @property
     def minimizers(self) -> list:
@@ -74,11 +74,11 @@ class Controller:
 
     @property
     def alive(self) -> dict:
-        living = {'producer': False, 'transformer': False, 'smoother': False}
+        living = {'producer': False, 'datagate': False, 'smoother': False}
         if self.__has('producer') and self.__producer.is_alive():
             living['producer'] = True
-        if self.__has('transformer') and self.__transformer.is_alive():
-            living['transformer'] = True
+        if self.__has('datagate') and self.__datagate.is_alive():
+            living['datagate'] = True
         if self.__has('smoother') and self.__smoother.is_alive():
             living['smoother'] = True
         living['minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
@@ -86,22 +86,22 @@ class Controller:
 
     @property
     def open(self) -> dict:
-        not_closed = {'events': False, 'phi': False, 'coefficients': False}
+        not_closed = {'events': False, 'points': False, 'coefficients': False}
         if not self.__event_queue._closed:
             not_closed['events'] = True
-        if not self.__phi_queue._closed:
-            not_closed['phi'] = True
+        if not self.__point_queue._closed:
+            not_closed['points'] = True
         if not self.__coeff_queue._closed:
             not_closed['coefficients'] = True
         return not_closed
 
     @property
     def qsize(self) -> dict:
-        qsizes = {'events': None, 'phi': None, 'coefficients': None}
+        qsizes = {'events': None, 'points': None, 'coefficients': None}
         if not self.__event_queue._closed:
             qsizes['events'] = self.__event_queue.qsize()
-        if not self.__phi_queue._closed:
-            qsizes['phi'] = self.__phi_queue.qsize()
+        if not self.__point_queue._closed:
+            qsizes['points'] = self.__point_queue.qsize()
         if not self.__coeff_queue._closed:
             qsizes['coefficients'] = self.__coeff_queue.qsize()
         return qsizes
@@ -112,7 +112,7 @@ class Controller:
 
     @property
     def N(self) -> int:
-        return self.__transformer.N if self.__has('transformer') else 0
+        return self.__datagate.N if self.__has('datagate') else 0
 
     @property
     def smooth_coeffs(self) -> ARRAY:
@@ -124,7 +124,7 @@ class Controller:
                           ' new <Parallel> object to get going again!')
         self.__start_smoother(decay)
         self.__start_minimizers(n_jobs)
-        self.__start_transformer()
+        self.__start_datagate()
         self.__start_producer()
 
     def __start_producer(self) -> None:
@@ -134,10 +134,10 @@ class Controller:
                                            self.__event_queue)
             self.__producer.start()
 
-    def __start_transformer(self) -> None:
-        if not self.__has('transformer'):
-            self.__transformer = Transformer(self.__transformer_params)
-            self.__transformer.start()
+    def __start_datagate(self) -> None:
+        if not self.__has('datagate'):
+            self.__datagate = DataGate(self.__datagate_params)
+            self.__datagate.start()
 
     def __start_minimizers(self, n_jobs: int =1) -> None:
         n_jobs = self.__integer_type_and_range_checked(n_jobs)
@@ -161,9 +161,9 @@ class Controller:
         if self.__has('producer'):
             self.__producer.flag.stop.set()
             self.__producer.flag.done.wait()
-        if self.__has('transformer'):
-            self.__transformer.flag.stop.set()
-            self.__transformer.flag.done.wait()
+        if self.__has('datagate'):
+            self.__datagate.flag.stop.set()
+            self.__datagate.flag.done.wait()
         for minimizer in self.__minimizers:
             minimizer.flag.stop.set()
             minimizer.flag.done.wait()
@@ -174,8 +174,8 @@ class Controller:
     def __join_processes(self) -> None:
         if self.__has('producer'):
             self.__producer.join()
-        if self.__has('transformer'):
-            self.__transformer.join()
+        if self.__has('datagate'):
+            self.__datagate.join()
         for minimizer in self.__minimizers:
             minimizer.join()
         if self.__has('smoother'):

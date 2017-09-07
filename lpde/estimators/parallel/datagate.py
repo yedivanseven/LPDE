@@ -1,7 +1,6 @@
 from multiprocessing import Process, Queue, Value
 from queue import Empty, Full
 from numpy import ndarray
-from numpy.polynomial.legendre import legvander2d
 from pandas import DataFrame
 from ..datatypes import Scalings, Action, Event, Degree, Flags
 from ...geometry import Mapper
@@ -10,13 +9,13 @@ QUEUE = type(Queue())
 TIMEOUT: float = 1.0
 
 
-class TransformerParams:
+class DataGateParams:
     def __init__(self, degree: Degree, mapper: Mapper, event_queue: QUEUE,
-                 phi_queue: QUEUE) -> None:
+                 point_queue: QUEUE) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
         self.__event_queue = self.__queue_type_checked(event_queue)
-        self.__phi_queue = self.__queue_type_checked(phi_queue)
+        self.__point_queue = self.__queue_type_checked(point_queue)
 
     @property
     def degree(self) -> Degree:
@@ -31,8 +30,8 @@ class TransformerParams:
         return self.__event_queue
 
     @property
-    def phi_queue(self) -> QUEUE:
-        return self.__phi_queue
+    def point_queue(self) -> QUEUE:
+        return self.__point_queue
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:
@@ -49,21 +48,20 @@ class TransformerParams:
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
         if type(value) is not QUEUE:
-            raise TypeError('Event and phi must be multiprocessing Queues!')
+            raise TypeError('Event and point must be multiprocessing Queues!')
         if value._closed:
-            raise OSError('Event- and phi-queues must initially be open!')
+            raise OSError('Event- and point-queues must initially be open!')
         return value
 
 
-class Transformer(Process):
-    def __init__(self, params: TransformerParams) -> None:
+class DataGate(Process):
+    def __init__(self, params: DataGateParams) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__flag = Flags()
         self.__degree = self.__params.degree
         self.__scale = Scalings(self.__degree)
-        # self.__phi_ijn = DataFrame(index=range(self.__scale.vec.size))
-        self.__phi_ijn = DataFrame(index=('x', 'y'))  # Remove line!
+        self.__points = DataFrame(index=('x', 'y'))
         self.__N = Value('i', 0)
         self.__handler_of = {Action.ADD: self.__add,
                              Action.MOVE: self.__move,
@@ -87,36 +85,36 @@ class Transformer(Process):
             else:
                 data_changed_due_to = self.__handler_of[event.action]
                 if data_changed_due_to(event):
-                    self.__push(self.__phi_ijn.values)
+                    self.__push(self.__points.values)
         self.__flag.done.set()
 
     def __add(self, event: Event) -> bool:
-        if event.id not in self.__phi_ijn.columns:
+        if event.id not in self.__points.columns:
             try:
                 location = self.__params.map.in_from(event.location)
             except ValueError:
                 return False
-        # phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-            self.__phi_ijn.loc[:, event.id] = location  # put back phi_ijn instead of location
+            else:
+                self.__points.loc[:, event.id] = location
             with self.__N.get_lock():
                 self.__N.value += 1
             return True
         return False
 
     def __move(self, event: Event) -> bool:
-        if event.id in self.__phi_ijn.columns:
+        if event.id in self.__points.columns:
             try:
                 location = self.__params.map.in_from(event.location)
             except ValueError:
                 return False
-        # phi_ijn = legvander2d(*location, self.__degree)[0]/self.__scale.vec
-            self.__phi_ijn.loc[:, event.id] = location  # put back phi_ijn instead of location
+            else:
+                self.__points.loc[:, event.id] = location
             return True
         return False
 
     def __delete(self, event: Event) -> bool:
-        if event.id in self.__phi_ijn.columns:
-            self.__phi_ijn.drop(event.id, axis=1, inplace=True)
+        if event.id in self.__points.columns:
+            self.__points.drop(event.id, axis=1, inplace=True)
             with self.__N.get_lock():
                 self.__N.value -= 1
             return True
@@ -124,7 +122,7 @@ class Transformer(Process):
 
     def __push(self, array: ndarray) -> None:
         try:
-            self.__params.phi_queue.put(array, timeout=TIMEOUT)
+            self.__params.point_queue.put(array, timeout=TIMEOUT)
         except AssertionError:
             err_msg = ('Phi queue is already closed. Instantiate a'
                        ' new <Parallel> object to start all over!')
@@ -137,8 +135,8 @@ class Transformer(Process):
         return self.__N.value
 
     @staticmethod
-    def __params_type_checked(value: TransformerParams) -> TransformerParams:
-        if type(value) is not TransformerParams:
+    def __params_type_checked(value: DataGateParams) -> DataGateParams:
+        if type(value) is not DataGateParams:
             raise TypeError('Parameters must be of type <TransformerParams>!')
         return value
 
