@@ -1,10 +1,10 @@
 from multiprocessing import Process, Queue
 from queue import Empty, Full
 from numpy import zeros, square, log, ndarray, float64, array
-from numpy.polynomial.legendre import legvander2d  # Remove line!
+from numpy.polynomial.legendre import legvander2d
 from scipy.optimize import fmin_l_bfgs_b, minimize
 from ..datatypes import LagrangeCoefficients, Degree, Flags
-from ..datatypes import Scalings  # Remove line!
+from ..datatypes import Scalings
 
 QUEUE = type(Queue())
 GRADIENT_TOLERANCE: float = 0.1

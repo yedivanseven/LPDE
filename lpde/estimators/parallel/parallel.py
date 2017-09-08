@@ -4,18 +4,17 @@ from numpy.polynomial.legendre import legval2d, legder
 from .controller import Controller
 from ..datatypes import Coefficients, Scalings, Event, Degree
 from ...geometry import Mapper, PointAt, Grid, BoundingBox
-from ...producers import MockParams
+from ...producers import PRODUCER_TYPES
 
 DEFAULT_PIXELS_Y: int = 100
 NUMPY_TYPE = Union[dtype, ndarray]
 
 
 class ParallelEstimator:
-    def __init__(self, degree: Degree, mapper: Mapper,
-                 producer_params: MockParams) -> None:
+    def __init__(self, degree: Degree, mapper: Mapper, produce_params) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__map = self.__mapper_type_checked(mapper)
-        params = self.__producer_params_type_checked(producer_params)
+        params = self.__producer_params_type_checked(produce_params)
         self.__controller = Controller(self.__degree, self.__map, params)
         self.__c = Coefficients(self.__degree)
         self.__c.vec = frombuffer(self.__controller.smooth_coeffs.get_obj())
@@ -97,9 +96,10 @@ class ParallelEstimator:
         return value
 
     @staticmethod
-    def __producer_params_type_checked(value: MockParams) -> MockParams:
-        if type(value) is not MockParams:
-            raise TypeError('Type of parameters must be <ProducerParams>!')
+    def __producer_params_type_checked(value):
+        if type(value) not in PRODUCER_TYPES:
+            err_msg = 'Type of producer parameters must be in PRODUCER_TYPES!'
+            raise TypeError(err_msg)
         return value
 
     @staticmethod

@@ -71,6 +71,10 @@ class DataGate(Process):
     def flag(self) -> Flags:
         return self.__flag
 
+    @property
+    def N(self) -> int:
+        return self.__N.value
+
     def run(self) -> None:
         while True:
             try:
@@ -129,10 +133,6 @@ class DataGate(Process):
             raise AssertionError(err_msg)
         except Full:
             raise Full('Phi queue is full!')
-
-    @property
-    def N(self) -> int:
-        return self.__N.value
 
     @staticmethod
     def __params_type_checked(value: DataGateParams) -> DataGateParams:
