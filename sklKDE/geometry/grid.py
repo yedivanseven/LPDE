@@ -13,11 +13,19 @@ class Grid:
     def y(self) -> int:
         return self.__y
 
+    @property
+    def shape(self) -> (int, int):
+        return self.__y, self.__x
+
+    @property
+    def size(self) -> int:
+        return self.__x * self.__y
+
     @staticmethod
     def __integer_type_and_range_checked(value: int) -> int:
         if type(value) is not int:
             raise TypeError('Number of grid points must be an integer!')
-        if value < 1:
+        if not value > 0:
             raise ValueError('Number of grid points must be positive!')
         return value
 

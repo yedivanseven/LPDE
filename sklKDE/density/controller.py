@@ -1,45 +1,50 @@
-from .estimator import Estimator
-from ..geometry import BoundingBox
-from ..producers import PRODUCER_TYPES
-from ..datatypes import Kernel
+from multiprocessing import Array
+from .parameters import ControllerParams, StreamerParams, GridMapperParams
+from .streamer import Streamer
+from .gridmapper import GridMapper
+
+ARRAY = type(Array('d', 10))
 
 
 class Controller:
-    def __init__(self, kernel: Kernel, bounds: BoundingBox, producer) -> None:
-        kernel = self.__kernel_type_checked(kernel)
-        self.__bounds = self.__boundingbox_type_checked(bounds)
-        producer = self.__producer_type_checked(producer)
-        self.__estimator = Estimator(kernel, self.__bounds, producer)
+    def __init__(self, params: ControllerParams) -> None:
+        params = self.__params_type_checked(params)
+        self.__data = params.data
+        streamer_params = StreamerParams(params.bounds,
+                                         params.producer,
+                                         params.data)
+        self.__stream = Streamer(streamer_params)
+        gridmapper_params = GridMapperParams(params.kernel,
+                                             params.bounds,
+                                             params.grid,
+                                             params.data)
+        self.__gridmap = GridMapper(gridmapper_params)
 
     @property
-    def is_alive(self) -> bool:
-        return self.__estimator.is_alive()
+    def alive(self) -> dict:
+        return {'Streamer': self.__stream.is_alive(),
+                'GridMapper': self.__gridmap.is_alive()}
 
     @property
-    def n_points(self) -> int:
-        return self.__estimator.n_points
+    def gridmap(self) -> GridMapper:
+        return self.__gridmap
+
+    @property
+    def stream(self) -> Streamer:
+        return self.__stream
 
     def start(self) -> None:
-        self.__estimator.start()
+        self.__stream.start()
+        self.__gridmap.start()
 
     def stop(self) -> None:
-        self.__estimator.stop.set()
-        self.__estimator.join()
+        self.__gridmap.stop.set()
+        self.__gridmap.join()
+        self.__stream.stop.set()
+        self.__stream.join()
 
     @staticmethod
-    def __kernel_type_checked(value: Kernel) -> Kernel:
-        if type(value) is not Kernel:
-            raise TypeError('Kernel must be of type <Kernel>!')
-        return value
-
-    @staticmethod
-    def __boundingbox_type_checked(value: BoundingBox) -> BoundingBox:
-        if type(value) is not BoundingBox:
-            raise TypeError('Bounds must be of type <BoundingBox>!')
-        return value
-
-    @staticmethod
-    def __producer_type_checked(value):
-        if type(value) not in PRODUCER_TYPES:
-            raise TypeError('Type of producer must be in PRODUCER_TYPES!')
+    def __params_type_checked(value: ControllerParams) -> ControllerParams:
+        if type(value) is not ControllerParams:
+            raise TypeError('Parameters must be of type <ControllerParams>!')
         return value
