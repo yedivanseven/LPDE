@@ -2,9 +2,7 @@ from random import randint, expovariate, sample
 from time import sleep
 from typing import Callable, Generator
 from uuid import uuid4
-
 from numpy import float64
-
 from ..datatypes import Action, Event
 from ..geometry import PointAt, Window, BoundingBox
 

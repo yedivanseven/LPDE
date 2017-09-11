@@ -1,15 +1,11 @@
-from multiprocessing import Array
 from .parameters import ControllerParams, StreamerParams, GridMapperParams
 from .streamer import Streamer
 from .gridmapper import GridMapper
-
-ARRAY = type(Array('d', 10))
 
 
 class Controller:
     def __init__(self, params: ControllerParams) -> None:
         params = self.__params_type_checked(params)
-        self.__data = params.data
         streamer_params = StreamerParams(params.bounds,
                                          params.producer,
                                          params.data)
