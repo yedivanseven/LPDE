@@ -34,6 +34,8 @@ class Density:
             self.__kde.fit(self.__data.values())
             density = exp(self.__kde.score_samples(point.position[None]))
             return float(n_points * density)
+        else:
+            return 0.0
 
     def _compute_on_grid(self) -> ndarray:                       # Remove line!
         if self.__data:                                          # Remove line!
