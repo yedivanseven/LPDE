@@ -20,7 +20,7 @@ class Density:
         self.__grid = self.__grid_from_params()                  # Remove line!
 
     @property
-    def controller(self) -> Controller:
+    def control(self) -> Controller:
         return self.__controller
 
     @property
@@ -35,7 +35,7 @@ class Density:
             density = exp(self.__kde.score_samples(point.position[None]))
             return float(n_points * density)
 
-    def compute_on_grid(self) -> ndarray:                        # Remove line!
+    def _compute_on_grid(self) -> ndarray:                       # Remove line!
         if self.__data:                                          # Remove line!
             n_points = len(self.__data)                          # Remove line!
             self.__kde.fit(self.__data.values())                 # Remove line!

@@ -8,8 +8,8 @@ class DensityParams:
                  grid: Grid, producer) -> None:
         self.__kernel = self.__kernel_type_checked(kernel)
         self.__bounds = self.__boundingbox_type_checked(bounds)
-        self.__producer = self.__producer_type_checked(producer)
         self.__grid = self.__grid_type_checked(grid)
+        self.__producer = self.__producer_type_checked(producer)
 
     @property
     def kernel(self) -> Kernel:

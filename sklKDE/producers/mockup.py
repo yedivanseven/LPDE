@@ -2,9 +2,7 @@ from random import randint, expovariate, sample
 from time import sleep
 from typing import Callable, Generator
 from uuid import uuid4
-
 from numpy import float64
-
 from ..datatypes import Action, Event
 from ..geometry import PointAt, Window, BoundingBox
 
@@ -40,9 +38,9 @@ class MockParams:
     @staticmethod
     def __integer_type_and_range_checked(value: int) -> int:
         if type(value) is not int:
-            raise TypeError('Build-up and number of events must be integers!')
+            raise TypeError('Build up must be an integer!')
         if not value > 0:
-            raise ValueError('Build-up and number of events must be positive!')
+            raise ValueError('Build-up must be positive!')
         return value
 
     @staticmethod
@@ -55,11 +53,11 @@ class MockParams:
         try:
             return_value = value(bounds)
         except Exception:
-            raise RuntimeError('Call to distribution function failed!')
+            raise RuntimeError('Test call to distribution function failed!')
         if type(return_value) is not PointAt:
             raise TypeError('Return value of distribution must be <PointAt>!')
         if not bounds.contain(return_value):
-            raise ValueError('Returned point lies outside bounding box!')
+            raise ValueError('Returned test point lies outside bounding box!')
         return value
 
 

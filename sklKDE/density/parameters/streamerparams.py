@@ -36,5 +36,5 @@ class StreamerParams:
     @staticmethod
     def __managed_dict_type_checked(value: DictProxy) -> DictProxy:
         if type(value) is not DictProxy:
-            raise TypeError('Type of data be multiprocessing <DictProxy>!')
+            raise TypeError('Data must be of type <DictProxy>!')
         return value
