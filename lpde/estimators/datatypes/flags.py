@@ -14,10 +14,6 @@ class Flags:
     def done(self) -> Event:
         return self.__done
 
-    @property
-    def any_set(self) -> bool:
-        return any((self.__stop.is_set(), self.__done.is_set()))
-
 
 if __name__ == '__main__':
     flag = Flags()

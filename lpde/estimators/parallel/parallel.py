@@ -1,5 +1,5 @@
 from typing import Union
-from numpy import square, ndarray, dtype, frombuffer, linspace, meshgrid
+from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legval2d, legder
 from .controller import Controller
 from ..datatypes import Coefficients, Scalings, Event, Degree
@@ -7,7 +7,7 @@ from ...geometry import Mapper, PointAt, Grid, BoundingBox
 from ...producers import PRODUCER_TYPES
 
 DEFAULT_PIXELS_Y: int = 100
-NUMPY_TYPE = Union[dtype, ndarray]
+NUMPY_TYPE = Union[float64, ndarray]
 
 
 class ParallelEstimator:
@@ -47,12 +47,12 @@ class ParallelEstimator:
     def gradient_on_grid(self) -> (ndarray, ndarray):
         return self.__gradient(self.__grid)
 
-    def at(self, point: PointAt) -> dtype:
+    def at(self, point: PointAt) -> float64:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         return self.__density(mapped_point)
 
-    def gradient_at(self, point: PointAt) -> (dtype, dtype):
+    def gradient_at(self, point: PointAt) -> (float64, float64):
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         return self.__gradient(mapped_point)

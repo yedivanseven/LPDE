@@ -1,4 +1,5 @@
 from time import sleep
+from typing import Callable
 from random import randint, expovariate, sample
 from uuid import uuid4
 from multiprocessing import Process, Queue
@@ -9,6 +10,7 @@ from ..estimators.datatypes import Action, Event, Flags
 
 QUEUE = type(Queue())
 TIMEOUT: float = 1.0
+DIST_TYPE = Callable[[BoundingBox], PointAt]
 
 
 class MockParams:
@@ -26,7 +28,7 @@ class MockParams:
         return self.__build_up
 
     @property
-    def dist(self) -> callable:
+    def dist(self) -> DIST_TYPE:
         return self.__dist
 
     @staticmethod
@@ -46,7 +48,7 @@ class MockParams:
         return value
 
     @staticmethod
-    def __function_type_checked(value: callable) -> callable:
+    def __function_type_checked(value: DIST_TYPE) -> DIST_TYPE:
         if not callable(value):
             raise TypeError('Distribution must be callable!')
         center = PointAt(0, 0)
@@ -54,12 +56,12 @@ class MockParams:
         bounds = BoundingBox(center, window)
         try:
             return_value = value(bounds)
-        except:
-            raise RuntimeError('Call to distribution function failed!')
+        except Exception:
+            raise RuntimeError('Test call to distribution function failed!')
         if type(return_value) is not PointAt:
             raise TypeError('Return value of distribution must be <PointAt>!')
         if not bounds.contain(return_value):
-            raise ValueError('Returned point lies outside bounding box!')
+            raise ValueError('Returned test point lies outside bounding box!')
         return value
 
 

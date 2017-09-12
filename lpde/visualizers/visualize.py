@@ -36,8 +36,8 @@ class Visualize:
         if not use_cartopy:
             self.__add_colorbar_to(contour_axis)
         animation = FuncAnimation(image_figure,
-                                  self.__update,
-                                  init_func=self.__initialize,
+                                  self.__update_figure,
+                                  init_func=self.__initialize_figure,
                                   interval=DEFAULT_UPDATE_INTERVAL,
                                   blit=use_cartopy)
         image_figure.show()
@@ -72,10 +72,10 @@ class Visualize:
         cbar_axis = axis_locs.append_axes('right', size='5%', pad=0.1)
         cbar_plot = colorbar(self.__image, cax=cbar_axis, label='density')
 
-    def __initialize(self) -> (AxesImage,):
+    def __initialize_figure(self) -> (AxesImage,):
         return self.__image,
 
-    def __update(self, _) -> (AxesImage,):
+    def __update_figure(self, _) -> (AxesImage,):
         image_data = self.__density.on_grid
         self.__image.set_data(image_data)
         self.__image.set_clim(image_data.min(), image_data.max())

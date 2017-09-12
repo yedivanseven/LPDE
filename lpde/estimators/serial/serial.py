@@ -35,7 +35,7 @@ class SerialEstimator:
         point = self.__point_type_checked(point)
         mapped_point = self.__map.in_from(point)
         p = square(legval2d(*mapped_point, self.__c.mat/self.__scale.mat))
-        return self.__map.out(p * float64(self.__N))
+        return self.__map.out(p * self.__N)
 
     def on(self, grid: Grid) -> ndarray:
         grid = self.__grid_type_checked(grid)

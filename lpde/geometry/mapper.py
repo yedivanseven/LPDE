@@ -1,5 +1,5 @@
 from typing import Union
-from numpy import ndarray, dtype
+from numpy import ndarray, float64
 from .boundingbox import BoundingBox
 from .support import WidthOf
 from .point import PointAt
@@ -27,7 +27,7 @@ class Mapper:
         relative_position = point.position - self.__bounds.center
         return relative_position * self.__in_scale
 
-    def out(self, density: Union[dtype, ndarray]) -> Union[dtype, ndarray]:
+    def out(self, density: Union[float64, ndarray]) -> Union[float64, ndarray]:
         return density * self.__out_scale
 
     @staticmethod

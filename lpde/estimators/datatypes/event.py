@@ -1,6 +1,9 @@
+from typing import Union
 from uuid import UUID
 from .action import Action
 from ...geometry import PointAt
+
+POINT_TYPE = Union[PointAt, None]
 
 
 class Event:
@@ -37,11 +40,9 @@ class Event:
         return value
 
     @staticmethod
-    def __point_type_checked(value: PointAt) -> PointAt:
-        # This is a bit awkward but necessary to satisfy type checking.
-        if value is not None:
-            if type(value) is not PointAt:
-                raise TypeError('Location must be of type <PointAt>!')
+    def __point_type_checked(value: PointAt) -> POINT_TYPE:
+        if value is not None and type(value) is not PointAt:
+            raise TypeError('Location must be of type <PointAt>!')
         return value
 
 

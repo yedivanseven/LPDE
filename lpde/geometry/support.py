@@ -1,3 +1,4 @@
+from numpy import float64
 
 
 class WidthOf:
@@ -10,7 +11,7 @@ class WidthOf:
 
     @staticmethod
     def __type_and_range_checked(value: float) -> float:
-        if type(value) not in (int, float):
+        if type(value) not in (int, float, float64):
             raise TypeError('Width must be a number!')
         if not 0.0 < value < 2.0:
             raise ValueError('Width must be between 0 and 2!')

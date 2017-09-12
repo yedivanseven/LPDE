@@ -43,4 +43,3 @@ if __name__ == '__main__':
     coefficients = Coefficients(degree)
     print(coefficients.vec)
     print(coefficients.mat)
-
