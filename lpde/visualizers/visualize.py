@@ -46,7 +46,7 @@ class Visualize:
     def __cartopy_geo_axis(self, zoom: int) -> (GeoAxesSubplot, dict):
         osm = OSM()
         axis = axes(projection=osm.crs)
-        axis.set_extent(self.__density.bounds.extent)
+        axis.set_extent(self.__density.bounds.extent, crs=PlateCarree())
         axis.add_image(osm, zoom)
         axis.text(-0.05, 0.50, 'latitude',
                   rotation='vertical',

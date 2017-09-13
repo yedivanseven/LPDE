@@ -40,9 +40,9 @@ class MinimizerParams:
     @staticmethod
     def __queue_type_checked(value: QUEUE) -> QUEUE:
         if type(value) is not QUEUE:
-            raise TypeError('Coeff and phi must be multiprocessing Queues!')
+            raise TypeError('Point and coeff must be multiprocessing Queues!')
         if value._closed:
-            raise OSError('Coeff- and phi-queues must initially be open!')
+            raise OSError('Point- and coeff-queues must initially be open!')
         return value
 
 
@@ -71,7 +71,7 @@ class Minimizer(Process):
                 queue_item = self.__params.point_queue.get(timeout=TIMEOUT)
                 points = self.__type_and_shape_checked(queue_item)
             except OSError:
-                raise OSError('Phi queue is already closed. Instantiate a'
+                raise OSError('Point queue is already closed. Instantiate a'
                               ' new <Parallel> object to get going again!')
             except Empty:
                 if self.__flag.stop.is_set():
@@ -125,7 +125,7 @@ class Minimizer(Process):
         return -log(square(c.dot(self.__phi_ijn))).sum()
 
     def __grad_neg_log_l(self, c: ndarray) -> ndarray:
-        return float64(-2.0)*(self.__phi_ijn/c.dot(self.__phi_ijn)).sum(axis=1)
+        return -2.0*(self.__phi_ijn/c.dot(self.__phi_ijn)).sum(axis=1)
 
     @staticmethod
     def __norm(c: ndarray) -> float64:

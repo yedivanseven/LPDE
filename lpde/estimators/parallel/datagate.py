@@ -128,11 +128,11 @@ class DataGate(Process):
         try:
             self.__params.point_queue.put(array, timeout=TIMEOUT)
         except AssertionError:
-            err_msg = ('Phi queue is already closed. Instantiate a'
+            err_msg = ('Point queue is already closed. Instantiate a'
                        ' new <Parallel> object to start all over!')
             raise AssertionError(err_msg)
         except Full:
-            raise Full('Phi queue is full!')
+            raise Full('Point queue is full!')
 
     @staticmethod
     def __params_type_checked(value: DataGateParams) -> DataGateParams:
