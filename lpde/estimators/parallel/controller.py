@@ -1,11 +1,11 @@
-from multiprocessing import Process, Queue, Array, Pipe
+from multiprocessing import Process, Queue, Array
 from numpy import float64
 from .datagate import DataGateParams, DataGate
 from .minimizer import MinimizerParams, Minimizer
 from .smoother import SmootherParams, Smoother
 from ..datatypes import Degree, Coefficients
 from ...geometry import Mapper
-from ...producers import MockProducer, PRODUCER_TYPES
+from ...producers import PRODUCER_TYPES
 
 MAXIMAL_QUEUE_SIZE: int = 1000
 QUEUE = type(Queue())
@@ -16,15 +16,14 @@ class Controller:
     def __init__(self, degree: Degree, mapper: Mapper, produce_params) -> None:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
-        self.__produce_params = self.__params_type_checked(produce_params)
-        self.__event_pipe_out, self.__event_pipe_in = Pipe(duplex=False)
         self.__point_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
         self.__coeff_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
         self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
+        produce_params = self.__producer_type_checked(produce_params)
         self.__datagate_params = DataGateParams(self.__degree,
                                                 self.__mapper,
-                                                self.__event_pipe_out,
-                                                self.__point_queue)
+                                                self.__point_queue,
+                                                produce_params)
         self.__minimizer_params = MinimizerParams(self.__degree,
                                                   self.__point_queue,
                                                   self.__coeff_queue)
@@ -40,12 +39,6 @@ class Controller:
     @property
     def coeff_queue(self) -> QUEUE:
         return self.__coeff_queue
-
-    @property
-    def producer(self) -> Process:
-        if self.__has('producer'):
-            return self.__producer
-        raise AttributeError('Producer process not started yet!')
 
     @property
     def datagate(self) -> Process:
@@ -67,11 +60,9 @@ class Controller:
 
     @property
     def alive(self) -> dict:
-        living = {'Producer': False, 'Datagate': False, 'Smoother': False}
-        if self.__has('producer') and self.__producer.is_alive():
-            living['Producer'] = True
+        living = {'DataGate': False, 'Smoother': False}
         if self.__has('datagate') and self.__datagate.is_alive():
-            living['Datagate'] = True
+            living['DataGate'] = True
         if self.__has('smoother') and self.__smoother.is_alive():
             living['Smoother'] = True
         living['Minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
@@ -79,12 +70,7 @@ class Controller:
 
     @property
     def open(self) -> dict:
-        not_closed = {'Events in': False, 'Events out': False,
-                      'Points': False, 'Coefficients': False}
-        if not self.__event_pipe_in.closed:
-            not_closed['Events in'] = True
-        if not self.__event_pipe_out.closed:
-            not_closed['Events out'] = True
+        not_closed = {'Points': False, 'Coefficients': False}
         if not self.__point_queue._closed:
             not_closed['Points'] = True
         if not self.__coeff_queue._closed:
@@ -119,14 +105,6 @@ class Controller:
         self.__start_smoother(decay)
         self.__start_minimizers(n_jobs)
         self.__start_datagate()
-        self.__start_producer()
-
-    def __start_producer(self) -> None:
-        if not self.__has('producer'):
-            self.__producer = MockProducer(self.__produce_params,
-                                           self.__mapper.bounds,
-                                           self.__event_pipe_in)
-            self.__producer.start()
 
     def __start_datagate(self) -> None:
         if not self.__has('datagate'):
@@ -152,9 +130,6 @@ class Controller:
         self.__close_pipe_and_queues()
 
     def __stop_processes(self) -> None:
-        if self.__has('producer'):
-            self.__producer.flag.stop.set()
-            self.__producer.flag.done.wait()
         if self.__has('datagate'):
             self.__datagate.flag.stop.set()
             self.__datagate.flag.done.wait()
@@ -166,8 +141,6 @@ class Controller:
             self.__smoother.flag.done.wait()
 
     def __join_processes(self) -> None:
-        if self.__has('producer'):
-            self.__producer.join()
         if self.__has('datagate'):
             self.__datagate.join()
         for minimizer in self.__minimizers:
@@ -176,8 +149,6 @@ class Controller:
             self.__smoother.join()
 
     def __close_pipe_and_queues(self) -> None:
-        self.__event_pipe_in.close()
-        self.__event_pipe_out.close()
         self.__point_queue.close()
         self.__point_queue.join_thread()
         self.__coeff_queue.close()
@@ -196,7 +167,7 @@ class Controller:
         return value
 
     @staticmethod
-    def __params_type_checked(value):
+    def __producer_type_checked(value):
         if type(value) not in PRODUCER_TYPES:
             err_msg = 'Type of producer parameters must be in PRODUCER_TYPES!'
             raise TypeError(err_msg)
