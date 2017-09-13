@@ -2,13 +2,12 @@ from time import sleep
 from typing import Callable
 from random import randint, expovariate, sample
 from uuid import uuid4
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 from multiprocessing.connection import Connection
 from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
 from ..estimators.datatypes import Action, Event, Flags
 
-QUEUE = type(Queue())
 TIMEOUT: float = 1.0
 DIST_TYPE = Callable[[BoundingBox], PointAt]
 
