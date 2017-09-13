@@ -1,4 +1,4 @@
-from multiprocessing import Process, Queue, Array
+from multiprocessing import Process, Queue, Array, Pipe
 from numpy import float64
 from .datagate import DataGateParams, DataGate
 from .minimizer import MinimizerParams, Minimizer
@@ -17,16 +17,13 @@ class Controller:
         self.__degree = self.__degree_type_checked(degree)
         self.__mapper = self.__mapper_type_checked(mapper)
         self.__produce_params = self.__params_type_checked(produce_params)
-        self.__event_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
+        self.__event_pipe_out, self.__event_pipe_in = Pipe(duplex=False)
         self.__point_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
         self.__coeff_queue = Queue(maxsize=MAXIMAL_QUEUE_SIZE)
-        self.__queues = (self.__event_queue,
-                         self.__point_queue,
-                         self.__coeff_queue)
         self.__smooth_coeffs = Array('d', Coefficients(self.__degree).vec)
         self.__datagate_params = DataGateParams(self.__degree,
                                                 self.__mapper,
-                                                self.__event_queue,
+                                                self.__event_pipe_out,
                                                 self.__point_queue)
         self.__minimizer_params = MinimizerParams(self.__degree,
                                                   self.__point_queue,
@@ -35,10 +32,6 @@ class Controller:
                                                 self.__smooth_coeffs)
         self.__minimizers = []
         self.__class_prefix = '_' + self.__class__.__name__ + '__'
-
-    @property
-    def event_queue(self) -> QUEUE:
-        return self.__event_queue
 
     @property
     def point_queue(self) -> QUEUE:
@@ -74,36 +67,37 @@ class Controller:
 
     @property
     def alive(self) -> dict:
-        living = {'producer': False, 'datagate': False, 'smoother': False}
+        living = {'Producer': False, 'Datagate': False, 'Smoother': False}
         if self.__has('producer') and self.__producer.is_alive():
-            living['producer'] = True
+            living['Producer'] = True
         if self.__has('datagate') and self.__datagate.is_alive():
-            living['datagate'] = True
+            living['Datagate'] = True
         if self.__has('smoother') and self.__smoother.is_alive():
-            living['smoother'] = True
-        living['minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
+            living['Smoother'] = True
+        living['Minimizers'] = tuple(m.is_alive() for m in self.__minimizers)
         return living
 
     @property
     def open(self) -> dict:
-        not_closed = {'events': False, 'points': False, 'coefficients': False}
-        if not self.__event_queue._closed:
-            not_closed['events'] = True
+        not_closed = {'Events in': False, 'Events out': False,
+                      'Points': False, 'Coefficients': False}
+        if not self.__event_pipe_in.closed:
+            not_closed['Events in'] = True
+        if not self.__event_pipe_out.closed:
+            not_closed['Events out'] = True
         if not self.__point_queue._closed:
-            not_closed['points'] = True
+            not_closed['Points'] = True
         if not self.__coeff_queue._closed:
-            not_closed['coefficients'] = True
+            not_closed['Coefficients'] = True
         return not_closed
 
     @property
     def qsize(self) -> dict:
-        qsizes = {'events': None, 'points': None, 'coefficients': None}
-        if not self.__event_queue._closed:
-            qsizes['events'] = self.__event_queue.qsize()
+        qsizes = {'Points': None, 'Coefficients': None}
         if not self.__point_queue._closed:
-            qsizes['points'] = self.__point_queue.qsize()
+            qsizes['Points'] = self.__point_queue.qsize()
         if not self.__coeff_queue._closed:
-            qsizes['coefficients'] = self.__coeff_queue.qsize()
+            qsizes['Coefficients'] = self.__coeff_queue.qsize()
         return qsizes
 
     @property
@@ -119,7 +113,7 @@ class Controller:
         return self.__smooth_coeffs
 
     def start(self, n_jobs: int =1, decay: float =1.0) -> None:
-        if any(queue._closed for queue in self.__queues):
+        if self.__point_queue._closed or self.__coeff_queue._closed:
             raise OSError('Some queues have been closed. Instantiate a'
                           ' new <Parallel> object to get going again!')
         self.__start_smoother(decay)
@@ -131,7 +125,7 @@ class Controller:
         if not self.__has('producer'):
             self.__producer = MockProducer(self.__produce_params,
                                            self.__mapper.bounds,
-                                           self.__event_queue)
+                                           self.__event_pipe_in)
             self.__producer.start()
 
     def __start_datagate(self) -> None:
@@ -155,7 +149,7 @@ class Controller:
     def stop(self) -> None:
         self.__stop_processes()
         self.__join_processes()
-        self.__close_queues()
+        self.__close_pipe_and_queues()
 
     def __stop_processes(self) -> None:
         if self.__has('producer'):
@@ -181,10 +175,13 @@ class Controller:
         if self.__has('smoother'):
             self.__smoother.join()
 
-    def __close_queues(self) -> None:
-        for queue in self.__queues:
-            queue.close()
-            queue.join_thread()
+    def __close_pipe_and_queues(self) -> None:
+        self.__event_pipe_in.close()
+        self.__event_pipe_out.close()
+        self.__point_queue.close()
+        self.__point_queue.join_thread()
+        self.__coeff_queue.close()
+        self.__coeff_queue.join_thread()
 
     @staticmethod
     def __degree_type_checked(value: Degree) -> Degree:

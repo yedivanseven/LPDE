@@ -3,7 +3,7 @@ from typing import Callable
 from random import randint, expovariate, sample
 from uuid import uuid4
 from multiprocessing import Process, Queue
-from queue import Full
+from multiprocessing.connection import Connection
 from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
 from ..estimators.datatypes import Action, Event, Flags
@@ -67,11 +67,11 @@ class MockParams:
 
 class MockProducer(Process):
     def __init__(self, params: MockParams, bounds: BoundingBox,
-                 event_queue: QUEUE) -> None:
+                 event_pipe: Connection) -> None:
         super().__init__()
         self.__params = self.__params_type_checked(params)
         self.__bounds = self.__bounds_type_checked(bounds)
-        self.__event_queue = self.__queue_type_checked(event_queue)
+        self.__event_pipe = self.__connection_type_checked(event_pipe)
         self.__flag = Flags()
         self.__points = {}
         self.__according_to = {1: self.__add,
@@ -92,6 +92,7 @@ class MockProducer(Process):
                 event_type = randint(-1, 1) if self.__points else 1
                 event = self.__according_to[event_type]()
             self.__push(event)
+        self.__event_pipe.close()
         self.__flag.done.set()
 
     def __add(self) -> Event:
@@ -114,13 +115,9 @@ class MockProducer(Process):
     def __push(self, event: Event) -> None:
         sleep(expovariate(self.__params.rate))
         try:
-            self.__event_queue.put(event, timeout=TIMEOUT)
-        except AssertionError:
-            err_msg = ('Event queue is already closed. Instantiate'
-                       ' a new <Parallel> object to get going again!')
-            raise AssertionError(err_msg)
-        except Full:
-            raise Full('Event queue is full!')
+            self.__event_pipe.send(event)
+        except BrokenPipeError:
+            raise BrokenPipeError('Event pipe appears to be closed!')
 
     def __new_location(self) -> PointAt:
         location: PointAt = self.__params.dist(self.__bounds)
@@ -141,9 +138,11 @@ class MockProducer(Process):
         return value
 
     @staticmethod
-    def __queue_type_checked(value: QUEUE) -> QUEUE:
-        if type(value) is not QUEUE:
-            raise TypeError('Event queue must be a multiprocessing Queue!')
-        if value._closed:
-            raise OSError('Event queue must be open on instantiation!')
+    def __connection_type_checked(value: Connection) -> Connection:
+        if type(value) is not Connection:
+            raise TypeError('Event pipe must be a multiprocessing Connection!')
+        if value.closed:
+            raise ValueError('Event pipe must not be closed on instantiation!')
+        if value.readable or not value.writable:
+            raise ValueError('Event pipe should be write-only!')
         return value
