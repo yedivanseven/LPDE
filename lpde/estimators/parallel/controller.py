@@ -79,17 +79,10 @@ class Controller:
 
     @property
     def open(self) -> dict:
-        not_closed = {'Events in': False, 'Events out': False,
-                      'Points': False, 'Coefficients': False}
-        if not self.__event_pipe_in.closed:
-            not_closed['Events in'] = True
-        if not self.__event_pipe_out.closed:
-            not_closed['Events out'] = True
-        if not self.__point_queue._closed:
-            not_closed['Points'] = True
-        if not self.__coeff_queue._closed:
-            not_closed['Coefficients'] = True
-        return not_closed
+        return {'Events in': not self.__event_pipe_in.closed,
+                'Events out': not self.__event_pipe_out.closed,
+                'Points': not self.__point_queue._closed,
+                'Coefficients': not self.__coeff_queue._closed}
 
     @property
     def qsize(self) -> dict:

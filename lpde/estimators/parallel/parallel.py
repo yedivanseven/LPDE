@@ -2,7 +2,7 @@ from typing import Union
 from numpy import square, ndarray, float64, frombuffer, linspace, meshgrid
 from numpy.polynomial.legendre import legval2d, legder
 from .controller import Controller
-from ..datatypes import Coefficients, Scalings, Event, Degree
+from ..datatypes import Coefficients, Scalings, Degree
 from ...geometry import Mapper, PointAt, Grid, BoundingBox
 from ...producers import PRODUCER_TYPES
 
@@ -57,14 +57,6 @@ class ParallelEstimator:
         mapped_point = self.__map.in_from(point)
         return self.__gradient(mapped_point)
 
-    def update_with(self, event: Event) -> None:
-        event = self.__event_type_checked(event)
-        try:
-            self.__controller.event_queue.put(event)
-        except AssertionError:
-            raise AssertionError('Event queue is already closed. Instantiate a'
-                                 ' new <Parallel> object to get going again!')
-
     def __make(self, grid: Grid) -> (ndarray, ndarray):
         x_line = linspace(*self.__map.legendre_interval, grid.x)
         y_line = linspace(*self.__map.legendre_interval, grid.y)
@@ -106,12 +98,6 @@ class ParallelEstimator:
     def __point_type_checked(value: PointAt) -> PointAt:
         if type(value) is not PointAt:
             raise TypeError('Point must be of type <PointAt>!')
-        return value
-
-    @staticmethod
-    def __event_type_checked(value: Event) -> Event:
-        if type(value) is not Event:
-            raise TypeError('Event must be of type <Event>!')
         return value
 
     @staticmethod

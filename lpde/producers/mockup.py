@@ -1,4 +1,4 @@
-from time import sleep
+from time import sleep, perf_counter
 from typing import Callable
 from random import randint, expovariate, sample
 from uuid import uuid4
@@ -83,6 +83,7 @@ class MockProducer(Process):
 
     def run(self) -> None:
         n_points = 0
+        # start = perf_counter()
         while not self.__flag.stop.is_set():
             if n_points < self.__params.build_up:
                 event = self.__add()
@@ -90,7 +91,11 @@ class MockProducer(Process):
             else:
                 event_type = randint(-1, 1) if self.__points else 1
                 event = self.__according_to[event_type]()
+                n_points += 1
             self.__push(event)
+            # if n_points == 10000:
+            #     stop = perf_counter()
+            #     print('Average time per event:', (stop - start)/10000)
         self.__event_pipe.close()
         self.__flag.done.set()
 
