@@ -69,13 +69,9 @@ class Controller:
         return living
 
     @property
-    def open(self) -> dict:
-        not_closed = {'Points': False, 'Coefficients': False}
-        if not self.__point_queue._closed:
-            not_closed['Points'] = True
-        if not self.__coeff_queue._closed:
-            not_closed['Coefficients'] = True
-        return not_closed
+    def qopen(self) -> dict:
+        return {'Points': not self.__point_queue._closed,
+                'Coefficients': not self.__coeff_queue._closed}
 
     @property
     def qsize(self) -> dict:

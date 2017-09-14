@@ -129,7 +129,7 @@ class Minimizer(Process):
 
     @staticmethod
     def __norm(c: ndarray) -> float64:
-        return c.dot(c) - float64(1.0)
+        return c.dot(c) - 1.0
 
     @staticmethod
     def __grad_norm(c: ndarray) -> ndarray:
@@ -150,5 +150,5 @@ class Minimizer(Process):
                              f' there are now {value.shape[0]}.')
         if value.size == 0:
             self.__push(self.__c_init.coeffs)
-            raise Empty('The data points matrix seems to be emtpy.')
+            raise Empty('The data-points matrix seems to be emtpy.')
         return value

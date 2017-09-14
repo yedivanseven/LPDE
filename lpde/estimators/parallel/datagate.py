@@ -1,7 +1,6 @@
 from multiprocessing import Process, Queue, Value
 from queue import Full
-from numpy import ndarray
-from pandas import DataFrame
+from numpy import ndarray, column_stack
 from ..datatypes import Scalings, Action, Event, Degree, Flags
 from ...geometry import Mapper
 from ...producers import MockProducer, PRODUCER_TYPES
@@ -68,7 +67,7 @@ class DataGate(Process):
         self.__params = self.__params_type_checked(params)
         self.__flag = Flags()
         self.__scale = Scalings(self.__params.degree)
-        self.__points = DataFrame(index=('x', 'y'))
+        self.__points = {}
         self.__N = Value('i', 0)
         self.__producer = MockProducer(self.__params.producer,
                                        self.__params.map.bounds)
@@ -88,43 +87,41 @@ class DataGate(Process):
         while not self.__flag.stop.is_set():
             try:
                 event = self.__event_type_checked(next(self.__producer.data))
-            except TypeError:
-                raise
             except StopIteration:
                 raise StopIteration('Producer does not yield any more points!')
             else:
                 data_changed_due_to = self.__handler_of[event.action]
                 if data_changed_due_to(event):
-                    self.__push(self.__points.values)
+                    self.__push(column_stack(self.__points.values()))
         self.__flag.done.set()
 
     def __add(self, event: Event) -> bool:
-        if event.id not in self.__points.columns:
+        if event.id not in self.__points.keys():
             try:
                 location = self.__params.map.in_from(event.location)
             except ValueError:
                 return False
             else:
-                self.__points.loc[:, event.id] = location
+                self.__points[event.id] = location
             with self.__N.get_lock():
                 self.__N.value += 1
             return True
         return False
 
     def __move(self, event: Event) -> bool:
-        if event.id in self.__points.columns:
+        if event.id in self.__points.keys():
             try:
                 location = self.__params.map.in_from(event.location)
             except ValueError:
                 return False
             else:
-                self.__points.loc[:, event.id] = location
+                self.__points[event.id] = location
             return True
         return False
 
     def __delete(self, event: Event) -> bool:
-        if event.id in self.__points.columns:
-            self.__points.drop(event.id, axis=1, inplace=True)
+        if event.id in self.__points.keys():
+            _ = self.__points.pop(event.id)
             with self.__N.get_lock():
                 self.__N.value -= 1
             return True

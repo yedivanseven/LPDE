@@ -1,7 +1,8 @@
-from time import perf_counter
+from time import sleep, perf_counter
 from typing import Callable, Generator
-from random import randint, sample
+from random import randint, sample, expovariate
 from uuid import uuid4
+from numpy import float64
 from ..geometry import PointAt, Window, BoundingBox
 from ..estimators.datatypes import Action, Event
 
@@ -9,9 +10,14 @@ DIST_TYPE = Callable[[BoundingBox], PointAt]
 
 
 class MockParams:
-    def __init__(self, build_up: int, dist: callable) -> None:
+    def __init__(self, rate: float, build_up: int, dist: callable) -> None:
+        self.__rate = self.__float_type_and_range_checked(rate)
         self.__build_up = self.__integer_type_and_range_checked(build_up)
         self.__dist = self.__function_type_checked(dist)
+
+    @property
+    def rate(self) -> float:
+        return self.__rate
 
     @property
     def build_up(self) -> int:
@@ -20,6 +26,14 @@ class MockParams:
     @property
     def dist(self) -> DIST_TYPE:
         return self.__dist
+
+    @staticmethod
+    def __float_type_and_range_checked(value: float) -> float:
+        if type(value) not in (int, float, float64):
+            raise TypeError('Rate parameter must be a number!')
+        if not value > 0.0:
+            raise ValueError('Rate parameter must be be positive')
+        return float(value)
 
     @staticmethod
     def __integer_type_and_range_checked(value: int) -> int:
@@ -64,7 +78,7 @@ class MockProducer:
 
     def __event_generator(self) -> Generator:
         n_events = 0
-        start = perf_counter()
+        # start = perf_counter()
         while True:
             if n_events < self.__params.build_up:
                 event = self.__add()
@@ -73,10 +87,11 @@ class MockProducer:
                 event_type = randint(-1, 1) if self.__points else 1
                 event = self.__according_to[event_type]()
                 n_events += 1
+            # sleep(expovariate(self.__params.rate))
             yield event
-            if n_events == 10000:
-                stop = perf_counter()
-                print('Average time (in seconds) is', (stop - start)/10000)
+            # if n_events == 10000:
+            #     stop = perf_counter()
+            #     print('Average time (in seconds) is', (stop - start)/10000)
 
     def __add(self) -> Event:
         location = self.__new_location()
