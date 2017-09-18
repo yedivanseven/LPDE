@@ -78,7 +78,7 @@ class MockProducer:
 
     def __event_generator(self) -> Generator:
         n_events = 0
-        # start = perf_counter()
+        start = perf_counter()
         while True:
             if n_events < self.__params.build_up:
                 event = self.__add()
@@ -89,9 +89,9 @@ class MockProducer:
                 n_events += 1
             # sleep(expovariate(self.__params.rate))
             yield event
-            # if n_events == 10000:
-            #     stop = perf_counter()
-            #     print('Average time (in seconds) is', (stop - start)/10000)
+            if n_events == 10000:
+                stop = perf_counter()
+                print('Average time (in seconds) is', (stop - start)/10000)
 
     def __add(self) -> Event:
         location = self.__new_location()
