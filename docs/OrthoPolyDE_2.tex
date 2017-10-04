@@ -67,7 +67,7 @@
 	\end{enumerate}
 	
 
-\chapter{Expansion of a Probability Density}
+\chapter{Probability Densities}
 	\section{The univariate case}
 	If, in particular, we wish to expand a univariate probability density function $p(x)$ with a support of $(a,b)$ into a truncated series of the type shown in eq. \ref{trunc_series}, care has to be taken that key properties of $p(x)$ are conserved.
 	\begin{align}
@@ -83,7 +83,7 @@
 		\sum_{i, j=0}^{J}c_ic_j\int_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) = \sum_{j=0}^{J}c_j^2 = 1
 	\end{equation}
 	If, on the other hand,  we multiply eq. \ref{sqrt_series} with $\phi_i(x)$ and $\sqrt{w(x)}$ and integrate over all $x$, then we find
-	\begin{align}
+	\begin{align}\label{coefficients}
 		\int_a^b\mathrm{d}x\,\phi_i(x)\sqrt{w(x)}\sqrt{p(x)} & = \sum_{j=0}^{J}c_j\int_a^b\mathrm{d}x\,\phi_i(x)\phi_j(x)w(x) \nonumber \\ 
 		\int_a^b\mathrm{d}x\,\frac{\phi_i(x)\sqrt{w(x)}}{\sqrt{p(x)}}p(x) & = \sum_{j=0}^{J}c_j\delta_{ij} \\
 		\mathbb{E}\left[\frac{\phi_i(x)}{\sum_{j=0}^{J}c_j\,\phi_j(x)}\right] & = c_i \nonumber
@@ -118,7 +118,7 @@
 			\frac{\partial}{\partial y}p(x, y) & = 2\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\phi_\ell(y)\right]\left[\sum_{k,\ell=0}^{K,L}C_{k\ell}\phi_k(x)\frac{\partial\phi_\ell(y)}{\partial y}\right] \nonumber
 		\end{align}
 
-\chapter{Constrained Maximum Likelihood Estimate of the Expansion Coefficients}
+\chapter{Maximum-Likelihood Estimate of Coefficients}
 	\section{The univariate case}
 	Say we have observed $N$ data points $x_{n=0\ldots N-1}$, collectively denoted by the vector $\mathbf{x}=\left\{x_n\right\}$ and we wish to find an approximation $\hat{p}(x)$ to the underlying probability distribution from which the data points were drawn.
 	
@@ -188,40 +188,56 @@
 		\begin{align}
 			2\,\mathbb{E}\left[\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)}\right] & = 	2\int_a^b\mathrm{d}x\,p(x)\frac{\phi_u(x)\phi_v(x)w(x)}{p(x)} \nonumber \\
 			& = 2\int_a^b\mathrm{d}x\,\phi_u(x)\phi_v(x)w(x) \\
-			& = 2\delta_{uv} \nonumber
+			& = 2\delta_{uv} = 2 \mathbbm{1} \nonumber
 		\end{align}
 		where we have exploited eq. \ref{orthogonality} in the last step. Derivatives of the negative log-likelihood with respect to the Lagrange multiplier $\lambda$ vanish.
 		
 		Moving on to the second term in \ref{hessian_split}, we derive once with respect to $c_u$
 		\begin{equation}\label{gradient_q}
-			\frac{\partial}{\partial c_u}\lambda q(\mathbf{c}) = \lambda\sum_{j=0}^{\infty}\frac{\partial}{\partial c_u}c_j^2 = 2\lambda c_u
+			\frac{\partial}{\partial c_u}\lambda q(\mathbf{c}) = \lambda\sum_{j=0}^{\infty}\frac{\partial}{\partial c_u}c_j^2 = 2\lambda c_u = 2\lambda\mathbf{c}
 		\end{equation}
 		and once with respect to $\lambda$:
 		\begin{equation}\label{gradient_lambda}
-			\frac{\partial}{\partial\lambda}\lambda q(\mathbf{c}) = q(\mathbf{c})	= \sum_{j=0}^{\infty}c_j^2 - 1 
+			\frac{\partial}{\partial\lambda}\lambda q(\mathbf{c}) = q(\mathbf{c})	= \sum_{j=0}^{\infty}c_j^2 - 1 = \mathbf{c}^\mathrm{T}\mathbf{c} - 1
 		\end{equation}
 		Taking again the derivative of eq. \ref{gradient_q} with respect to $c_v$, we find
 		\begin{equation}
-			\frac{\partial}{\partial c_v}2\lambda c_u = 2\lambda\delta_{uv}
+			\frac{\partial}{\partial c_v}2\lambda c_u = 2\lambda\delta_{uv} = 2\lambda\mathbbm{1}
 		\end{equation}
 		and with respect to $\lambda$:
 		\begin{equation}
-			\frac{\partial}{\partial\lambda}2\lambda c_u = 2c_u
+			\frac{\partial}{\partial\lambda}2\lambda c_u = 2c_u = 2\mathbf{c}
 		\end{equation}
 		Finally, we derive eq. \ref{gradient_lambda} with respect to $c_v$ to find
 		\begin{equation}
-			\frac{\partial}{\partial c_v}\left(\sum_{j=0}^{\infty}c_j^2 - 1 \right) = 2c_v
+			\frac{\partial}{\partial c_v}\left(\sum_{j=0}^{\infty}c_j^2 - 1 \right) = 2c_v = 2\mathbf{c}
 		\end{equation}
-		while its derivative with respect to $\lambda$ vanishes.
-		
-		Taking the expectation value does not change the result. Both terms in \ref{hessian_split} are thus $2\mathbbm{1}$ matrices and, comparing it to \ref{fisher_direct}, we see that we would have to require $\lambda = 1$ at the optimal solution point $\mathbf{c}^*$ in order for $\bm{\mathcal{H}}^*_\mathcal{L} = 4\mathbbm{1}$. As we will see below, this is certainly the case if, as we have just done, we compute the likelihood for a single observed data point $x$ only.
+		while its derivative with respect to $\lambda$ vanishes. Taking the expectation value does not change the result. To summarize, if we (arbitrarily) take $\lambda$ to be the first of parameter, the Hessian \ref{hessian_split} can be written as:
+		\begin{equation}\label{hessian_lagrangian}
+			\bm{\mathcal{H}}_\mathcal{L} = \left(
+			\begin{array}{cc}
+				0 & 2\mathbf{c} \\
+				  &  \\
+				2\mathbf{c} & 2\mathbbm{1} + 2\lambda\mathbbm{1} \\
+				  &  
+			\end{array} \right)
+		\end{equation}
+		Comparison to eq. \ref{fisher_direct} then suggest that we would have to require $\lambda = 1$ at the optimal solution point $\mathbf{c}^*$ such that:
+		\begin{equation}
+			\bm{\mathcal{H}}_\mathcal{L} = \left(
+			\begin{array}{cc}
+				0 & 2\mathbf{c} \\
+				2\mathbf{c} & \bm{\mathcal{F}}
+			\end{array} \right)
+		\end{equation}
+		As we will see below, this is certainly the case if, as we have just done, we compute the likelihood at a single point $x$ only.
 		
 		\subsection{Explicit expressions}
-		Regardless of how we chose to minimize the objective function \ref{lagrangian}, we it might be useful to know its gradient and, potentially, also its Hessian. In analogy to eq. \ref{gradient_logp}, we find for the gradient $\nabla_{nll}$ of the negative log-likelihood \ref{log_likelihood}
+		Regardless of how we chose to minimize the objective function \ref{lagrangian} in practice, it might be useful to know its gradient and, potentially, also its Hessian. In analogy to eq. \ref{gradient_logp}, we find for the gradient $\nabla_{nll}$ of the negative log-likelihood \ref{log_likelihood} with respect to the coefficients
 		\begin{equation}\label{gradient_num_logp}
 			\nabla_{nll} = -2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)\sqrt{w(x_n)}}{\sqrt{p(x_n)}} = -2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}\bm{\upphi}(x_n)}
 		\end{equation}
-		where $\bm{\upphi}$ stands for the vector $\{\phi_i\}$, the denominator is written as a dot product, and $\sqrt{p(x_n)}$ was substituted by its expansion \ref{sqrt_series}. Given result \ref{gradient_q}, deriving the gradient of the constraint \ref{constraint} is straightforward.
+		where $\bm{\upphi}$ stands for the vector $\{\phi_i\}$, the denominator is written as a dot product, and $\sqrt{p(x_n)}$ was substituted by its expansion \ref{sqrt_series}. Given result \ref{gradient_q}, deriving the coefficient gradient of the constraint \ref{constraint} is straightforward.
 		\begin{equation}\label{gradient_num_q}
 			\nabla q(\mathbf{c}) = 2\mathbf{c}
 		\end{equation}
@@ -234,41 +250,10 @@
 			-2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)} + 2\lambda^*\mathbf{c}^* & = 0 \nonumber \\
 			\mathbf{c}^* & = \frac{1}{\lambda^*}\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)}
 		\end{align}
-		Substituting this result into \ref{constraint}, we then obtain:
-		\begin{align}\label{lambda}
-			\frac{1}{\lambda^{*2}}\sum_{j=0}^{J}\left(\sum_{n=0}^{N-1}\frac{\phi_j(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)}\right)^2 & = 1 \nonumber \\
-			\lambda^* & = \sqrt{\sum_{j=0}^{J}\left(\sum_{n=0}^{N-1}\frac{\phi_j(x_n)}{\mathbf{c}^*\bm{\upphi}(x_n)}\right)^2}
-		\end{align}
-		Using this result also off the optimal solution point, and abbreviating the sum over all $N$ observations with
-		\begin{equation}
-			\bm{\upsigma} = \sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)}{\mathbf{c}\bm{\upphi}(x_n)} 
+		Comparison with eq. \ref{coefficients} then shows that
+		\begin{equation}\label{lambda_opt}
+			\lambda^*=N
 		\end{equation}
-		and, thus,
-		\begin{equation}
-			\lambda = \lVert\bm{\upsigma}\rVert
-		\end{equation}
-		with $\lVert\cdot\rVert$ the $L^2$ norm, the objective function \ref{lagrangian} can now be rewritten as
-		\begin{equation}
-			\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = -\log p(\mathbf{x}\vert\mathbf{c}) + \lVert\bm{\upsigma}\rVert\left(\lVert\mathbf{c}\rVert^2-1\right)
-		\end{equation}
-		and, using eq. \ref{gradient_num_logp}, its gradient emerges as:
-		\begin{equation}\label{gradient_num_lagrange}
-			\nabla\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = -2\bm{\upsigma} + 2\lVert\bm{\upsigma}\rVert\,\mathbf{c}
-		\end{equation}
-		Should we require also the Hessian in our optimization scheme, there are two options. Firstly, in the same spirit as choosing lambda, one could simply take its value at the optimal solution point, which we have just shown to be:
-		\begin{equation}
-			\nabla\nabla^\mathrm{T}\mathcal{L}(\mathbf{x},\mathbf{c},\lambda) = 4\mathbbm{1}
-		\end{equation}
-		Secondly, one could take the derivative of eq. \ref{gradient_num_lagrange}. Using eq. \ref{sqrt_series}, we find the analogue to eq. \ref{hessian_logp} for the Hessian of the negative log-likelihood.
-		\begin{equation}
-			-\nabla\nabla^\mathrm{T}\log p(\mathbf{x}\vert\mathbf{c}) = 2\sum_{n=0}^{N-1}\frac{\bm{\upphi}(x_n)\bm{\upphi}^\mathrm{T}(x_n)}{\left[\mathbf{c}\bm{\upphi}(x_n)\right]^2}
-		\end{equation}
-		Applying the product and chain rules of differentiation for the second term in eq. \ref{gradient_num_lagrange} yields
-		\begin{equation}
-			2\lVert\bm{\upsigma}\rVert\,\mathbbm{1} - \frac{1}{\lVert\bm{\upsigma}\rVert}\sum_{n=0}^{N-1}\frac{\mathrm{tr}\left[\mathbbm{1}\bm{\upphi}(x_n)\right]}{\mathbf{c}\bm{\upphi}(x_n)}\frac{\bm{\upphi}(x_n)\mathbf{c}^\mathrm{T}}{\left[\mathbf{c}\bm{\upphi}(x_n)\right]^2}
-		\end{equation}
-		with the final result the sum of the two.
-		
-	\section{The bivariate case}
+	    for the right-hand side to be an unbiased estimate of the expectation value found there for the optimal coefficients. Following eq. \ref{gradient_lambda}, the $\lambda$-component of the gradient is simply the (square-)normalization condition of the coefficients. Should we require also the Hessian in our optimization scheme we employ eq. \ref{hessian_lagrangian}, potentially even as just a constant matrix with $\lambda$ set to its optimal value given by eq. \ref{lambda_opt}.
 				
 \end{document}          
